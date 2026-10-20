@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&display=swap');
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+
+    --color-berry-green: #15803d;
+    --color-berry-green-dark: #166534;
+    --color-berry-green-soft: #f0fdf4;
+    --color-berry-green-bright: #22c55e;
+    --color-berry-green-border: #bbf7d0;
+    --color-berry-crimson: #be123c;
+    --color-berry-crimson-dark: #9f1239;
+    --color-berry-crimson-soft: #fff1f2;
+    --color-berry-crimson-border: #fecdd3;
+    --color-berry-amber: #b45309;
+    --color-berry-amber-soft: #fffbeb;
+    --color-berry-amber-border: #fde68a;
+    --color-berry-blue: #1d4ed8;
+    --color-berry-blue-soft: #eff6ff;
+    --color-berry-blue-border: #bfdbfe;
+    --color-berry-ink: #0f172a;
+    --color-berry-slate-700: #334155;
+    --color-berry-muted: #64748b;
+    --color-berry-slate-400: #94a3b8;
+    --color-berry-border: #e2e8f0;
+    --color-berry-surface: #ffffff;
+    --color-berry-canvas: #f8fafc;
+
+    --radius-badge: 4px;
+    --radius-control: 6px;
+    --radius-nav: 7px;
+    --radius-card: 8px;
+    --radius-modal: 9px;
+    --shadow-card: 0 1px 2px rgb(15 23 42 / 2.5%);
+    --shadow-modal: 0 25px 60px rgb(15 23 42 / 22%);
+    --shadow-toast: 0 12px 32px rgb(15 23 42 / 22%);
+}
+
+@layer base {
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        min-height: 100vh;
+        margin: 0;
+        background: var(--color-berry-canvas);
+        color: var(--color-berry-ink);
+        font-family: var(--font-sans);
+        font-synthesis: none;
+    }
+
+    button,
+    input,
+    select {
+        font: inherit;
+    }
+
+    button {
+        cursor: pointer;
+    }
+
+    button:disabled {
+        cursor: default;
+        opacity: .65;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+        outline: 3px solid rgb(21 128 61 / 18%);
+        outline-offset: 1px;
+    }
+}
+
+[x-cloak] {
+    display: none !important;
+}
