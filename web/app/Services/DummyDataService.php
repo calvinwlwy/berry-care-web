@@ -17,7 +17,7 @@ class DummyDataService
         }
 
         return [
-            'greeting' => 'Selamat pagi, Pak Dadang',
+            'greeting' => 'Selamat datang di dashboard Haifresh',
             'updatedAt' => '2 menit lalu',
             'weather' => ['location' => 'Lembang', 'temperature' => 21, 'humidity' => 84, 'condition' => 'Lembap Basah'],
             'activeAlerts' => $this->activeAlertCount(),

@@ -1,4 +1,4 @@
-package com.example.berry_care_mobile
+package com.berrycare.fieldapp
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -20,7 +20,7 @@ class SecurityHeaders
             'camera=(), microphone=(), geolocation=()'
         );
 
-        if ($request->is('api/login', 'api/user')) {
+        if ($request->is('api/login', 'api/user', 'api/auth/google')) {
             $response->headers->set('Cache-Control', 'no-store');
         }
 

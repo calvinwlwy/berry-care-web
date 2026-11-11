@@ -1,7 +1,11 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\GoogleAuthController;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/auth/google', [GoogleAuthController::class, 'login'])
+    ->middleware('throttle:google-mobile-login');
 
 Route::post('/register', [AuthController::class, 'register'])
     ->middleware(['throttle:api-register']);

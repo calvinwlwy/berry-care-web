@@ -1,17 +1,39 @@
-# berry_care_mobile
+# Berry Care Field App
 
-A new Flutter project.
+## Menjalankan aplikasi Android
 
-## Getting Started
+Atur `API_URL` ke alamat dasar API Laravel yang dapat dijangkau perangkat.
+Untuk emulator Android lokal, gunakan `http://10.0.2.2:8000/api`. Nilai
+`GOOGLE_SERVER_CLIENT_ID` harus sama dengan OAuth Web client ID yang disetel
+sebagai `GOOGLE_CLIENT_ID` di konfigurasi Laravel.
 
-This project is a starting point for a Flutter application.
+```powershell
+cd mobile
+flutter pub get
+flutter run -d <android-device-id> `
+  --dart-define=API_URL=http://10.0.2.2:8000/api `
+  --dart-define=GOOGLE_SERVER_CLIENT_ID=<web-client-id>
+```
 
-A few resources to get you started if this is your first Flutter project:
+Tombol SSO tetap ditampilkan di Android, tetapi akan memberi pesan
+“SSO belum dikonfigurasi.” jika `GOOGLE_SERVER_CLIENT_ID` kosong.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Menjalankan di Chrome
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Gunakan OAuth Web client ID yang sama untuk backend dan Flutter. Tambahkan
+`http://localhost` dan origin port tetap `http://localhost:7357` sebagai
+Authorized JavaScript origins di Google Cloud Console. API lokal mengizinkan
+origin localhost; untuk deployment, atur `CORS_ALLOWED_ORIGINS` di Laravel.
+
+```powershell
+cd mobile
+flutter run -d chrome --web-hostname localhost --web-port 7357 `
+  --dart-define=API_URL=http://localhost:8000/api `
+  --dart-define=GOOGLE_SERVER_CLIENT_ID=<web-client-id>
+```
+
+Tombol di Chrome dirender oleh Google Identity Services SDK dan akan menerima
+ID token melalui event autentikasi sebelum dikirim ke Laravel. Jangan gunakan
+`serverClientId` pada web; aplikasi memakai nilai define yang sama sebagai
+OAuth `clientId` web. Lihat [panduan SSO](../docs/sso-google.md) untuk
+konfigurasi Google Cloud.

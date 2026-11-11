@@ -1,10 +1,8 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 import '../../helper/constant.dart';
 import '../../methods/api.dart';
+import '../../widget/app_widgets.dart';
 import '../../widget/input_field.dart';
 import 'login.dart';
 
@@ -16,203 +14,130 @@ class Register extends StatefulWidget {
 }
 
 class _RegisterState extends State<Register> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController usernameController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  bool isLoading = false;
+  final _name = TextEditingController();
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  final _confirmation = TextEditingController();
+  bool _busy = false;
 
   @override
   void dispose() {
-    emailController.dispose();
-    usernameController.dispose();
-    passwordController.dispose();
+    _name.dispose();
+    _email.dispose();
+    _password.dispose();
+    _confirmation.dispose();
     super.dispose();
   }
 
-  String _responseMessage(http.Response response) {
-    final decoded = jsonDecode(response.body);
-    if (response.statusCode == 422 && decoded['errors'] is Map) {
-      final errors = decoded['errors'] as Map<String, dynamic>;
-      for (final value in errors.values) {
-        if (value is List && value.isNotEmpty) {
-          return value.first.toString();
-        }
-      }
-    }
-
-    return decoded is Map && decoded['message'] is String
-        ? decoded['message'] as String
-        : 'Terjadi kesalahan. Silakan coba lagi.';
-  }
-
-  void _showMessage(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  Future<void> registerUser() async {
-    if (isLoading) return;
-    setState(() => isLoading = true);
-
+  Future<void> _register() async {
+    if (_busy) return;
+    setState(() => _busy = true);
     try {
-      final password = passwordController.text;
-      final result = await API().postRequest(
+      final response = await API().postRequest(
         route: '/register',
         data: {
-          'email': emailController.text.trim(),
-          'name': usernameController.text.trim(),
-          'password': password,
-          'password_confirmation': password,
+          'name': _name.text.trim(),
+          'email': _email.text.trim(),
+          'password': _password.text,
+          'password_confirmation': _confirmation.text,
         },
       );
-      final response = jsonDecode(result.body);
-
-      if (result.statusCode == 201) {
-        _showMessage(response['message'] as String);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
         if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pendaftaran berhasil. Silakan masuk.')),
+        );
+        Navigator.of(context).pushReplacement(
           MaterialPageRoute<void>(builder: (_) => const Login()),
         );
       } else {
-        _showMessage(_responseMessage(result));
+        _message(responseMessage(response));
       }
-    } catch (e) {
-      _showMessage('Tidak dapat terhubung ke server: $e');
+    } catch (error) {
+      debugPrint('Register request failed: $error');
+      _message(
+        'Tidak dapat menghubungi server. Periksa koneksi dan coba lagi.',
+      );
     } finally {
-      if (mounted) setState(() => isLoading = false);
+      if (mounted) setState(() => _busy = false);
     }
+  }
+
+  void _message(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
-    final width = deviceWidth(context);
-    final height = deviceHeight(context);
-
     return Scaffold(
-      body: Container(
-        width: width,
-        height: height,
-        padding: spacing(h: 20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-            colors: [primaryColor, secondaryColor],
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                spancer(h: height * 0.1),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    const RotatedBox(
-                      quarterTurns: 3,
-                      child: Text(
-                        'Sign Up',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    spancer(w: width * 0.05),
-                    // Keep Container to match the supplied reference layout.
-                    // ignore: sized_box_for_whitespace
-                    Container(
-                      width: width * 0.5,
-                      child: const Text(
-                        'We can start something new',
-                        style: TextStyle(color: Colors.white, fontSize: 32),
-                      ),
-                    ),
-                  ],
-                ),
-                spancer(h: height * 0.12),
-                InputField(
-                  width: width,
-                  controller: usernameController,
-                  hintText: 'Username',
-                ),
-                spancer(h: height * 0.01),
-                InputField(
-                  width: width,
-                  controller: emailController,
-                  hintText: 'Email',
-                ),
-                spancer(h: height * 0.01),
-                InputField(
-                  width: width,
-                  controller: passwordController,
-                  hintText: 'Password',
-                  isObscure: true,
-                ),
-                spancer(h: height * 0.08),
-                InkWell(
-                  onTap: isLoading ? null : registerUser,
-                  child: Container(
-                    alignment: Alignment.centerRight,
-                    padding: spacing(h: 20),
-                    child: Container(
-                      width: width * 0.3,
-                      padding: spacing(h: 20, v: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(width),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            isLoading ? '...' : 'OK',
-                            style: TextStyle(color: primaryColor, fontSize: 18),
-                          ),
-                          spancer(w: 10),
-                          Icon(
-                            Icons.arrow_right_alt_rounded,
-                            color: primaryColor,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: height * 0.1),
-                Row(
-                  children: [
-                    Text(
-                      'Have we met before?',
-                      style: TextStyle(color: secondaryTextColor, fontSize: 18),
-                    ),
-                    spancer(w: 4),
-                    InkWell(
-                      onTap: () => Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (_) => const Login(),
-                        ),
-                      ),
-                      child: const Text(
-                        'Sign In',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            const SizedBox(height: space16),
+            IconButton(
+              alignment: Alignment.centerLeft,
+              onPressed: () => Navigator.of(context).maybePop(),
+              icon: const Icon(Icons.arrow_back),
             ),
-          ),
+            const SizedBox(height: space16),
+            Text(
+              'Daftar akun',
+              style: Theme.of(context).textTheme.headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: space4),
+            const Text(
+              'Buat akun operator kebun Berry Care.',
+              style: TextStyle(color: mutedColor),
+            ),
+            const SizedBox(height: space20),
+            AppCard(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  AppInputField(
+                    controller: _name,
+                    label: 'Nama',
+                    icon: Icons.person_outline,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: space12),
+                  AppInputField(
+                    controller: _email,
+                    label: 'Email',
+                    icon: Icons.mail_outline,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: space12),
+                  AppInputField(
+                    controller: _password,
+                    label: 'Password',
+                    icon: Icons.lock_outline,
+                    obscureText: true,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: space12),
+                  AppInputField(
+                    controller: _confirmation,
+                    label: 'Konfirmasi password',
+                    icon: Icons.lock_outline,
+                    obscureText: true,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _register(),
+                  ),
+                  const SizedBox(height: 20),
+                  AppButton(
+                    label: _busy ? 'Mendaftarkan...' : 'Daftar',
+                    onPressed: _busy ? null : _register,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

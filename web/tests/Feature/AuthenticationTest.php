@@ -19,6 +19,8 @@ class AuthenticationTest extends TestCase
             ->assertSee('name="email"', false)
             ->assertSee('value="" autocomplete="username"', false)
             ->assertSee('name="password"', false)
+            ->assertSee('Masuk dengan Google')
+            ->assertSee('>atau<', false)
             ->assertDontSee('admin@haifresh.id')
             ->assertDontSee('berrycare2026');
     }
@@ -160,8 +162,10 @@ class AuthenticationTest extends TestCase
 
     public function test_dashboard_has_shared_logout_confirmation_modal(): void
     {
-        $this->actingAs(User::factory()->create(['role' => 'admin']))
-            ->get(route('dashboard'))
+        $response = $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->get(route('dashboard'));
+
+        $response
             ->assertOk()
             ->assertSee('open-logout-confirmation', false)
             ->assertSee('role="dialog"', false)
@@ -172,7 +176,10 @@ class AuthenticationTest extends TestCase
             ->assertSee('Batal', false)
             ->assertSee('Ya, Keluar', false)
             ->assertSee('Keluar...', false)
-            ->assertSee('name="_token"', false);
+            ->assertSee('name="_token"', false)
+            ->assertHeader('Pragma', 'no-cache')
+            ->assertHeader('Expires', '0');
+        $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
     }
 
     public function test_authenticated_user_can_log_out_and_session_is_invalidated(): void
@@ -181,11 +188,18 @@ class AuthenticationTest extends TestCase
         $this->actingAs($user);
         $token = session()->token();
 
-        $this->post(route('logout'))
-            ->assertRedirect(route('login'));
+        $logoutResponse = $this->post(route('logout'));
+        $logoutResponse
+            ->assertRedirect(route('login'))
+            ->assertHeader('Pragma', 'no-cache')
+            ->assertHeader('Expires', '0');
+        $this->assertStringContainsString('no-store', $logoutResponse->headers->get('Cache-Control'));
 
         $this->assertGuest();
         $this->assertNotSame($token, session()->token());
+
+        $this->get(route('dashboard'))
+            ->assertRedirect(route('login'));
     }
 
     public function test_get_logout_does_not_log_out_authenticated_user(): void

@@ -39,4 +39,15 @@ return [
         'registration_enabled' => env('API_REGISTRATION_ENABLED', false),
     ],
 
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'auto_register' => env('GOOGLE_AUTO_REGISTER', false),
+        'redirect' => env(
+            'GOOGLE_REDIRECT_URI',
+            rtrim(env('APP_URL', 'http://localhost'), '/').'/auth/google/callback'
+        ),
+        'allowed_domain' => env('GOOGLE_ALLOWED_DOMAIN'),
+    ],
+
 ];

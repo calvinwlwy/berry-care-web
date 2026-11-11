@@ -2,14 +2,15 @@
 
 namespace App\Providers;
 
-use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Http\Request;
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\URL;
 use App\Services\LoginAttemptLogger;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -40,7 +41,7 @@ class AppServiceProvider extends ServiceProvider
                 Str::lower((string) $request->input('email')).'|'.$request->ip()
             );
 
-            $response = function (Request $request, array $headers): \Illuminate\Http\JsonResponse {
+            $response = function (Request $request, array $headers): JsonResponse {
                 app(LoginAttemptLogger::class)->failed(
                     $request,
                     $request->input('email'),
@@ -57,6 +58,21 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perMinute(20)->by('api-login-ip|'.$request->ip())->response($response),
             ];
         });
+
+        RateLimiter::for('google-mobile-login', fn (Request $request): Limit => Limit::perMinute(10)
+            ->by('google-mobile-login|'.$request->ip())
+            ->response(function (Request $request, array $headers) {
+                app(LoginAttemptLogger::class)->googleAttempt(
+                    $request,
+                    null,
+                    'rate_limited',
+                    false
+                );
+
+                return response()->json([
+                    'message' => 'Terlalu banyak percobaan login. Silakan coba lagi dalam satu menit.',
+                ], 429, $headers);
+            }));
 
         RateLimiter::for('web-login-ip', fn (Request $request): Limit => Limit::perMinute(20)
             ->by('web-login-ip|'.$request->ip())

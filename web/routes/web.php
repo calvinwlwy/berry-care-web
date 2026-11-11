@@ -1,9 +1,11 @@
 <?php
 
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\PasswordHelpController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ManagementController;
+use App\Http\Middleware\PreventAuthenticatedPageCaching;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -11,10 +13,16 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthenticatedSessionController::class, 'store'])
         ->middleware('throttle:web-login-ip')
         ->name('login.store');
+    Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])
+        ->middleware('throttle:10,1')
+        ->name('auth.google');
+    Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])
+        ->middleware('throttle:10,1')
+        ->name('auth.google.callback');
     Route::get('/forgot-password', PasswordHelpController::class)->name('password.help');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', PreventAuthenticatedPageCaching::class])->group(function () {
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::get('/polybags', [ManagementController::class, 'polybags'])->name('polybags.index');
     Route::get('/diagnosis', [ManagementController::class, 'diagnosis'])->name('diagnosis.index');

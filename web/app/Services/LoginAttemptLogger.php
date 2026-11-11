@@ -22,6 +22,20 @@ class LoginAttemptLogger
         $this->failed($request, $request->query('email'), 'credentials_in_query_string');
     }
 
+    public function googleAttempt(
+        Request $request,
+        mixed $email,
+        string $reason,
+        bool $succeeded
+    ): void {
+        Log::log($succeeded ? 'info' : 'warning', 'Google API login attempt', [
+            'ip' => $request->ip(),
+            'email' => $this->maskEmail($email),
+            'user_agent' => mb_substr((string) $request->userAgent(), 0, 200),
+            'reason' => $reason,
+        ]);
+    }
+
     private function maskEmail(mixed $email): string
     {
         if (! is_string($email) || $email === '') {
