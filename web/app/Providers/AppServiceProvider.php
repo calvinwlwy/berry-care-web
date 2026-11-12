@@ -59,6 +59,9 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
+        RateLimiter::for('api', fn (Request $request): Limit => Limit::perMinute(60)
+            ->by('api-user|'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
+
         RateLimiter::for('google-mobile-login', fn (Request $request): Limit => Limit::perMinute(10)
             ->by('google-mobile-login|'.$request->ip())
             ->response(function (Request $request, array $headers) {

@@ -1,0 +1,266 @@
+{
+  "info": {
+    "_postman_id": "bc27cd90-ff43-4fd5-80f2-4c85d98e5de6",
+    "name": "Berry Care Backend - Bukti Screenshot",
+    "description": "Collection ini hanya memuat 8 skenario screenshot Bagian 2. Jalankan folder secara berurutan. Folder pertama juga berisi request persiapan admin untuk membuat akun petani dan polybag uji. Isi adminEmail dan adminPassword dengan kredensial lokal.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:8000/api" },
+    { "key": "adminEmail", "value": "" },
+    { "key": "adminPassword", "value": "" },
+    { "key": "farmerPassword", "value": "DemoPetani-2026!" },
+    { "key": "farmerEmail", "value": "" },
+    { "key": "polybagCode", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "farmerToken", "value": "" },
+    { "key": "polybagId", "value": "" },
+    { "key": "systemAlertId", "value": "" }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const match = pm.info.requestName.match(/^\\[(\\d+)\\]/);",
+          "if (match) pm.test(`HTTP ${match[1]}`, function () { pm.response.to.have.status(Number(match[1])); });",
+          "if (pm.response.code !== 204) {",
+          "  const body = pm.response.json();",
+          "  pm.test('Response berupa JSON object', function () { pm.expect(body).to.be.an('object'); });",
+          "  if (pm.response.code >= 400) pm.test('Response error memiliki message', function () { pm.expect(body).to.have.property('message'); });",
+          "  if (pm.response.code < 300) {",
+          "    const name = pm.info.requestName.toLowerCase();",
+          "    if (name.includes('login admin')) pm.collectionVariables.set('adminToken', body.token);",
+          "    if (name.includes('login petani')) pm.collectionVariables.set('farmerToken', body.token);",
+          "    if (name.includes('buat polybag uji')) pm.collectionVariables.set('polybagId', body.data.id);",
+          "    if (name.includes('daftar alert aktif')) {",
+          "      const alert = (body.data || []).find((item) => item.source === 'system' && item.status === 'active' && item.polybag_id === Number(pm.collectionVariables.get('polybagId')));",
+          "      if (alert) pm.collectionVariables.set('systemAlertId', alert.id);",
+          "    }",
+          "    if (name.includes('konfirmasi alert terselesaikan')) pm.test('Alert sistem berstatus resolved', function () { pm.expect(body.data.status).to.eql('resolved'); });",
+          "  }",
+          "  if (pm.response.code === 422) pm.test('Response memuat detail errors', function () { pm.expect(body).to.have.property('errors'); });",
+          "  if (pm.response.code === 403) pm.test('Akses ditolak', function () { pm.expect(body.message).to.eql('Akses ditolak.'); });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Akses petani ke daftar polybag",
+      "description": "Tangkapan layar: jalankan request terakhir dengan token petani. Tiga request awal login admin dan menyiapkan akun/polybag uji.",
+      "item": [
+        {
+          "name": "[200] Login admin (persiapan)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"{{adminEmail}}\",\"password\":\"{{adminPassword}}\"}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/login"
+          }
+        },
+        {
+          "name": "[201] Buat polybag uji (persiapan)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('polybagCode', `POT-PM-${Date.now()}`);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"code\":\"{{polybagCode}}\",\"block\":\"A\",\"location\":\"Uji Postman\"}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/polybags"
+          }
+        },
+        {
+          "name": "[201] Buat akun petani uji (persiapan)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('farmerEmail', `petani.screenshot.${Date.now()}@example.test`);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"name\":\"Petani Uji Screenshot\",\"email\":\"{{farmerEmail}}\",\"password\":\"{{farmerPassword}}\"}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/adduser"
+          }
+        },
+        {
+          "name": "[200] Login petani",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"{{farmerEmail}}\",\"password\":\"{{farmerPassword}}\"}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/login"
+          }
+        },
+        {
+          "name": "[200] Daftar polybag sebagai petani (SCREENSHOT)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{farmerToken}}" }],
+            "url": "{{baseUrl}}/polybags?per_page=5"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Otorisasi petani ditolak saat membuat polybag",
+      "item": [
+        {
+          "name": "[403] Petani tidak dapat membuat polybag (SCREENSHOT)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{farmerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"code\":\"POT-DENIED-{{$timestamp}}\",\"block\":\"A\"}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/polybags"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Validasi nilai sensor",
+      "item": [
+        {
+          "name": "[422] Tolak soil_moisture di atas 100 (SCREENSHOT)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{farmerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"soil_moisture\":101,\"nitrogen\":10,\"phosphorus\":5,\"potassium\":50,\"recorded_at\":\"{{$isoTimestamp}}\"}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/polybags/{{polybagId}}/readings"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Evaluasi threshold membuat alert",
+      "item": [
+        {
+          "name": "[201] Kirim pembacaan sensor rendah",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{farmerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"soil_moisture\":20,\"nitrogen\":10,\"phosphorus\":5,\"potassium\":50,\"recorded_at\":\"{{$isoTimestamp}}\"}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/polybags/{{polybagId}}/readings"
+          }
+        },
+        {
+          "name": "[200] Daftar alert aktif (SCREENSHOT)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{farmerToken}}" }],
+            "url": "{{baseUrl}}/alerts?status=active&per_page=100"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Pembacaan normal menyelesaikan alert",
+      "item": [
+        {
+          "name": "[201] Kirim pembacaan sensor normal",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{farmerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"soil_moisture\":65,\"nitrogen\":45,\"phosphorus\":25,\"potassium\":150,\"recorded_at\":\"{{$isoTimestamp}}\"}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/polybags/{{polybagId}}/readings"
+          }
+        },
+        {
+          "name": "[200] Konfirmasi alert terselesaikan (SCREENSHOT)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{farmerToken}}" }],
+            "url": "{{baseUrl}}/alerts/{{systemAlertId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Ringkasan dashboard API",
+      "item": [
+        {
+          "name": "[200] Ringkasan dashboard (SCREENSHOT)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{farmerToken}}" }],
+            "url": "{{baseUrl}}/dashboard/summary"
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Simpan diagnosis dengan foto (opsional)",
+      "description": "Pilih file JPG/PNG kurang dari 5 MB pada field image sebelum mengirim request.",
+      "item": [
+        {
+          "name": "[201] Buat diagnosis dengan foto (SCREENSHOT)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{farmerToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "polybag_id", "value": "{{polybagId}}", "type": "text" },
+                { "key": "type", "value": "leaf", "type": "text" },
+                { "key": "label", "value": "Bercak Daun", "type": "text" },
+                { "key": "confidence", "value": "94.8", "type": "text" },
+                { "key": "severity", "value": "watch", "type": "text" },
+                { "key": "scanned_at", "value": "{{$isoTimestamp}}", "type": "text" },
+                { "key": "notes", "value": "Data uji untuk bukti screenshot.", "type": "text" },
+                { "key": "image", "type": "file", "src": "" }
+              ]
+            },
+            "url": "{{baseUrl}}/diagnoses"
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Endpoint terlindungi tanpa token (opsional)",
+      "item": [
+        {
+          "name": "[401] Akses threshold tanpa token (SCREENSHOT)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/thresholds"
+          }
+        }
+      ]
+    }
+  ]
+}

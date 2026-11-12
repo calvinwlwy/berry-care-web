@@ -1,4 +1,81 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Berry Care Backend
+
+Backend Laravel 12 untuk sistem monitoring dan peringatan dini kebun
+stroberi Haifresh Lembang. API dipakai oleh aplikasi Flutter dan dashboard.
+
+## Persiapan project lokal
+
+1. Siapkan PHP sesuai `composer.json`, Composer, MySQL, Node.js dan npm.
+   Buat database MySQL kosong bernama `berry_care_web`.
+2. Dari folder `web/`, salin `.env.example` menjadi `.env`, lalu isi
+   konfigurasi koneksi database dan `ADMIN_EMAIL`/`ADMIN_PASSWORD` lokal.
+   Jangan membagikan atau commit file `.env`.
+3. Jalankan perintah berikut:
+
+   ```powershell
+   composer install
+   php artisan key:generate
+   php artisan migrate
+   php artisan db:seed --class=AdminUserSeeder
+   php artisan db:seed --class=BerryCareDemoSeeder
+   php artisan storage:link
+   php artisan serve
+   ```
+
+   Migrasi domain menambahkan tabel baru dan ambang batas bawaan; migrasi
+   tidak menghapus atau membangun ulang tabel `users`. Seeder demo dapat
+   dijalankan berulang dan tidak dipanggil otomatis oleh `DatabaseSeeder`.
+   `storage:link` membuat foto diagnosis di disk public dapat diakses.
+4. Jalankan `npm install` dan `npm run build` bila akan memakai dashboard
+   Blade. Untuk tes backend gunakan:
+
+   ```powershell
+   php artisan route:list
+   php artisan test
+   vendor\bin\pint --test
+   ```
+
+5. Impor `docs/postman/Berry_Care_Backend_API.postman_collection.json`,
+   isi variabel `baseUrl`, `adminEmail`, dan `adminPassword`, lalu kirim
+   request berurutan dari folder collection.
+
+Dokumentasi struktur, ERD, dan kontrak endpoint tersedia di `docs/backend/`.
+API domain memerlukan Bearer token Sanctum. Aturan akses admin/petani dan
+format request/response dirinci dalam dokumentasi endpoint.
+
+## Tentang data demo
+
+Dashboard Blade lama masih memakai service data contoh. API domain yang
+baru membaca dan menulis tabel polybag, sensor, iklim, diagnosis, peringatan,
+dan ambang batas. `BerryCareDemoSeeder` menambahkan contoh untuk API.
+
+## Keamanan dan produksi
+
+Checklist sebelum deployment:
+
+- Salin `.env.production.example` menjadi `.env` di server, lalu isi
+  `APP_KEY`, koneksi database, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, dan rahasia
+  lain langsung di server. Jangan commit `.env` atau kredensial.
+- Pastikan `APP_ENV=production`, `APP_DEBUG=false`, dan `LOG_LEVEL=warning`.
+  Aplikasi juga memaksa debug nonaktif saat boot di production.
+- Aktifkan HTTPS di web server/load balancer dan gunakan URL HTTPS.
+  Jika hosting berada di belakang reverse proxy, isi `TRUSTED_PROXIES`
+  dengan alamat IP/CIDR proxy yang benar (dipisahkan koma); jangan percaya
+  proxy publik yang tidak dikelola.
+- Pertahankan `SESSION_SECURE_COOKIE=true` untuk cookie HTTPS.
+- Biarkan `API_REGISTRATION_ENABLED=false` di production. Buat akun admin
+  melalui proses administrasi yang aman.
+- Jika API dipanggil dari aplikasi web lintas-origin, isi
+  `CORS_ALLOWED_ORIGINS` dengan origin frontend production secara persis
+  (contoh `https://app.contoh-domain`). Jangan memakai wildcard di production.
+- Atur cron server agar Laravel Scheduler berjalan setiap menit:
+  `* * * * * cd /path/ke/web && php artisan schedule:run >> /dev/null 2>&1`.
+  Scheduler akan menjalankan pembersihan token Sanctum kedaluwarsa setiap
+  hari.
+- Kirim email/password hanya melalui body JSON pada HTTPS. Jangan menaruh
+  kredensial di URL atau query string.
+- Batasi akses server dan backup, rotasi kredensial yang pernah terpapar,
+  pantau log login gagal, dan tetapkan kebijakan masa berlaku/rotasi token.
 
 <p align="center">
 <a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>

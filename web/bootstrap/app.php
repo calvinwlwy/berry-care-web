@@ -1,13 +1,14 @@
 <?php
 
-use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Configuration\Exceptions;
-use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Auth\AuthenticationException;
-use Illuminate\Http\Request;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\WarnApiLoginCredentialsInQueryString;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -30,9 +31,21 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        $exceptions->shouldRenderJsonWhen(
+            fn (Request $request): bool => $request->is('api/*')
+        );
         $exceptions->render(function (AuthenticationException $exception, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json(['message' => 'Tidak terautentikasi.'], 401);
+            }
+        });
+        $exceptions->render(function (HttpExceptionInterface $exception, Request $request) {
+            if ($request->is('api/*')) {
+                return match ($exception->getStatusCode()) {
+                    403 => response()->json(['message' => 'Akses ditolak.'], 403),
+                    404 => response()->json(['message' => 'Data tidak ditemukan.'], 404),
+                    default => null,
+                };
             }
         });
     })->create();

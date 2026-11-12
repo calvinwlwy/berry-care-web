@@ -21,7 +21,7 @@ class DashboardTest extends TestCase
             ->assertSee('Mikroklimat 24 Jam')
             ->assertSee('id="climate-chart"', false)
             ->assertSee($today)
-            ->assertSee('Selamat datang di dashboard admin');
+            ->assertSee('Selamat datang di dashboard Haifresh');
     }
 
     public function test_dashboard_search_filters_recent_polybag_rows(): void
