@@ -15,6 +15,7 @@ class UpdateDiagnosisRequest extends ApiFormRequest
     {
         return [
             'polybag_id' => ['sometimes', 'nullable', 'integer', 'exists:polybags,id'],
+            'kategori_id' => ['sometimes', 'nullable', 'integer', 'exists:kategori,id'],
             'type' => ['sometimes', 'required', Rule::in(['leaf', 'fruit'])],
             'label' => ['sometimes', 'required', 'string', 'max:255'],
             'confidence' => ['sometimes', 'required', 'numeric', 'between:0,100'],
@@ -29,6 +30,8 @@ class UpdateDiagnosisRequest extends ApiFormRequest
     {
         return [
             'confidence.between' => 'Akurasi harus 0 sampai 100.',
+            'kategori_id.integer' => 'Kategori diagnosis harus berupa ID angka.',
+            'kategori_id.exists' => 'Kategori diagnosis yang dipilih tidak ditemukan.',
             'image.image' => 'File harus berupa gambar.',
             'image.mimes' => 'Foto harus berformat JPG atau PNG.',
             'image.max' => 'Ukuran foto maksimal 5 MB.',

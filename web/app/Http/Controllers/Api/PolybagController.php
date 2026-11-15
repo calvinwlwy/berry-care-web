@@ -34,7 +34,7 @@ class PolybagController extends Controller
 
     public function store(StorePolybagRequest $request): JsonResponse
     {
-        $polybag = Polybag::query()->create($request->validated());
+        $polybag = Polybag::query()->create($request->validated())->refresh();
 
         return (new PolybagResource($polybag))
             ->additional(['message' => 'Polybag berhasil ditambahkan.'])

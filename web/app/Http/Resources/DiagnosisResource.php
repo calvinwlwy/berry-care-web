@@ -13,6 +13,7 @@ class DiagnosisResource extends JsonResource
         return [
             'id' => $this->id,
             'polybag_id' => $this->polybag_id,
+            'kategori_id' => $this->kategori_id,
             'user_id' => $this->user_id,
             'type' => $this->type,
             'label' => $this->label,
@@ -27,6 +28,10 @@ class DiagnosisResource extends JsonResource
                 'id' => $this->user->id,
                 'name' => $this->user->name,
             ]),
+            'kategori' => $this->whenLoaded('kategori', fn () => $this->kategori ? [
+                'id' => $this->kategori->id,
+                'nama_kategori' => $this->kategori->nama_kategori,
+            ] : null),
         ];
     }
 }

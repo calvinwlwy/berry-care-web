@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ClimateReadingController;
 use App\Http\Controllers\Api\DashboardSummaryController;
 use App\Http\Controllers\Api\DiagnosisController;
 use App\Http\Controllers\Api\GoogleAuthController;
+use App\Http\Controllers\Api\KategoriController;
 use App\Http\Controllers\Api\PolybagController;
 use App\Http\Controllers\Api\SensorReadingController;
 use App\Http\Controllers\Api\ThresholdController;
@@ -41,6 +42,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
     Route::apiResource('diagnoses', DiagnosisController::class)
         ->names('api.diagnoses');
+    Route::apiResource('kategori', KategoriController::class)
+        ->names('api.kategori');
 
     Route::get('/alerts', [AlertController::class, 'index']);
     Route::post('/alerts', [AlertController::class, 'store']);

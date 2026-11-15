@@ -15,6 +15,7 @@ class StoreDiagnosisRequest extends ApiFormRequest
     {
         return [
             'polybag_id' => ['nullable', 'integer', 'exists:polybags,id'],
+            'kategori_id' => ['nullable', 'integer', 'exists:kategori,id'],
             'type' => ['required', 'in:leaf,fruit'],
             'label' => ['required', 'string', 'max:255'],
             'confidence' => ['required', 'numeric', 'between:0,100'],
@@ -29,6 +30,8 @@ class StoreDiagnosisRequest extends ApiFormRequest
     {
         return [
             'type.in' => 'Jenis diagnosis harus leaf atau fruit.',
+            'kategori_id.integer' => 'Kategori diagnosis harus berupa ID angka.',
+            'kategori_id.exists' => 'Kategori diagnosis yang dipilih tidak ditemukan.',
             'confidence.between' => 'Akurasi harus 0 sampai 100.',
             'severity.in' => 'Tingkat diagnosis harus ok, watch, atau action.',
             'image.image' => 'File harus berupa gambar.',

@@ -1,0 +1,486 @@
+openapi: 3.0.3
+info:
+  title: Berry Care Master Kategori API
+  version: 1.0.0
+  description: API CRUD kategori diagnosis tanaman Berry Care.
+servers:
+  - url: http://127.0.0.1:8000/api
+    description: Server Laravel lokal
+tags:
+  - name: Kategori
+    description: Master kategori diagnosis tanaman
+paths:
+  /kategori:
+    get:
+      tags: [Kategori]
+      summary: Daftar dan cari kategori
+      security:
+        - sanctumBearer: []
+      parameters:
+        - name: q
+          in: query
+          description: Pencarian substring pada nama_kategori
+          schema:
+            type: string
+            maxLength: 100
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 15
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Daftar kategori dengan pagination links/meta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KategoriList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Kategori]
+      summary: Buat kategori (admin)
+      security:
+        - sanctumBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KategoriInput'
+            example:
+              nama_kategori: Penyakit Daun
+              deskripsi: Gangguan yang menyerang daun tanaman.
+      responses:
+        '201':
+          description: Kategori dibuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KategoriMutation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /kategori/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID kategori numerik
+        schema:
+          type: integer
+          minimum: 1
+    get:
+      tags: [Kategori]
+      summary: Detail kategori
+      security:
+        - sanctumBearer: []
+      responses:
+        '200':
+          description: Detail kategori beserta jumlah diagnosis
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KategoriDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      tags: [Kategori]
+      summary: Ganti data kategori (admin)
+      security:
+        - sanctumBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KategoriInput'
+      responses:
+        '200':
+          description: Kategori diperbarui
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KategoriMutation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    patch:
+      tags: [Kategori]
+      summary: Perbarui data kategori (admin)
+      security:
+        - sanctumBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KategoriInput'
+      responses:
+        '200':
+          description: Kategori diperbarui
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KategoriMutation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [Kategori]
+      summary: Hapus kategori yang tidak dipakai (admin)
+      security:
+        - sanctumBearer: []
+      responses:
+        '204':
+          description: Kategori terhapus tanpa response body
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Kategori masih digunakan diagnosis
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+              example:
+                message: Kategori masih dipakai oleh data diagnosis dan tidak dapat dihapus.
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /diagnoses:
+    get:
+      summary: Daftar diagnosis; dapat difilter berdasarkan kategori
+      security:
+        - sanctumBearer: []
+      parameters:
+        - name: kategori_id
+          in: query
+          schema:
+            type: integer
+            nullable: true
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Diagnosis terpaginasikan dengan objek kategori bila relasi tersedia
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Simpan diagnosis dengan kategori opsional
+      security:
+        - sanctumBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, label, confidence, severity, scanned_at]
+              properties:
+                kategori_id:
+                  type: integer
+                  nullable: true
+                type:
+                  type: string
+                  enum: [leaf, fruit]
+                label:
+                  type: string
+                confidence:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+                severity:
+                  type: string
+                  enum: [ok, watch, action]
+                scanned_at:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Diagnosis berhasil disimpan
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /diagnoses/{id}:
+    put:
+      summary: Perbarui diagnosis termasuk kategori (admin)
+      security:
+        - sanctumBearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kategori_id:
+                  type: integer
+                  nullable: true
+                type:
+                  type: string
+                  enum: [leaf, fruit]
+                label:
+                  type: string
+                confidence:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+                severity:
+                  type: string
+                  enum: [ok, watch, action]
+                notes:
+                  type: string
+                  nullable: true
+                scanned_at:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Diagnosis diperbarui dengan data kategori terkait
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    patch:
+      summary: Perbarui diagnosis termasuk kategori (admin)
+      security:
+        - sanctumBearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kategori_id:
+                  type: integer
+                  nullable: true
+                type:
+                  type: string
+                  enum: [leaf, fruit]
+                label:
+                  type: string
+                confidence:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+                severity:
+                  type: string
+                  enum: [ok, watch, action]
+                notes:
+                  type: string
+                  nullable: true
+                scanned_at:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Diagnosis diperbarui dengan data kategori terkait
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '500':
+          $ref: '#/components/responses/ServerError'
+components:
+  securitySchemes:
+    sanctumBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: Sanctum token
+  schemas:
+    Kategori:
+      type: object
+      required: [id, nama_kategori, deskripsi, created_at, updated_at]
+      properties:
+        id:
+          type: integer
+        nama_kategori:
+          type: string
+          minLength: 2
+          maxLength: 100
+        deskripsi:
+          type: string
+          nullable: true
+          maxLength: 1000
+        diagnoses_count:
+          type: integer
+          description: Disertakan pada endpoint kategori yang memuat count.
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+    KategoriInput:
+      type: object
+      required: [nama_kategori]
+      additionalProperties: false
+      properties:
+        nama_kategori:
+          type: string
+          minLength: 2
+          maxLength: 100
+        deskripsi:
+          type: string
+          nullable: true
+          maxLength: 1000
+    KategoriList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Kategori'
+        links:
+          type: object
+        meta:
+          type: object
+    KategoriDetail:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Kategori'
+    KategoriMutation:
+      allOf:
+        - $ref: '#/components/schemas/KategoriDetail'
+        - type: object
+          properties:
+            message:
+              type: string
+    Message:
+      type: object
+      properties:
+        message:
+          type: string
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Data yang diberikan tidak valid.
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+  responses:
+    Unauthorized:
+      description: Token hilang atau tidak valid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Message'
+          example:
+            message: Tidak terautentikasi.
+    Forbidden:
+      description: Role pengguna tidak memiliki akses
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Message'
+          example:
+            message: Akses ditolak.
+    NotFound:
+      description: Resource atau ID kategori tidak ditemukan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Message'
+          example:
+            message: Data tidak ditemukan.
+    MethodNotAllowed:
+      description: Metode HTTP tidak diizinkan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Message'
+          example:
+            message: Metode HTTP tidak diizinkan.
+    ServerError:
+      description: Kesalahan server; detail dicatat di log internal
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Message'
+          example:
+            message: Terjadi kesalahan pada server.

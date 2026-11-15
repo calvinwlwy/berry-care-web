@@ -27,11 +27,16 @@ menggunakan `data`, `links`, dan `meta`; validasi memakai status 422 dengan
 | GET | `/climate?from=&to=&per_page=` | Ya | Semua | Riwayat suhu/kelembapan | 200, paginasi |
 | GET | `/climate/latest` | Ya | Semua | Pembacaan iklim terbaru | 200, `data` atau null |
 | POST | `/climate` | Ya | Semua | `{ "temperature":22.5,"humidity":80,"recorded_at":"2026-11-12T08:00:00+07:00" }` | 201, pembacaan |
-| GET | `/diagnoses?type=&polybag_id=&per_page=` | Ya | Semua | Daftar diagnosis | 200, paginasi |
-| POST | `/diagnoses` | Ya | Semua | type, label, confidence, severity, scanned_at, optional image JPG/PNG | 201, diagnosis; user dari token |
+| GET | `/diagnoses?type=&polybag_id=&kategori_id=&per_page=` | Ya | Semua | Daftar diagnosis, termasuk filter kategori | 200, paginasi |
+| POST | `/diagnoses` | Ya | Semua | type, label, confidence, severity, scanned_at, optional kategori_id dan image JPG/PNG | 201, diagnosis; user dari token |
 | GET | `/diagnoses/{id}` | Ya | Semua | Detail diagnosis | 200, diagnosis |
 | PUT/PATCH | `/diagnoses/{id}` | Ya | Admin | Ubah data diagnosis/foto | 200, diagnosis |
 | DELETE | `/diagnoses/{id}` | Ya | Admin | Hapus diagnosis/foto | 204 |
+| GET | `/kategori?q=&per_page=` | Ya | Admin, petani | Cari kategori, pagination dan diagnoses_count | 200, paginasi |
+| POST | `/kategori` | Ya | Admin | `{ "nama_kategori":"Penyakit Daun","deskripsi":"..." }` | 201, kategori |
+| GET | `/kategori/{id}` | Ya | Admin, petani | Detail kategori dan diagnoses_count | 200, kategori |
+| PUT/PATCH | `/kategori/{id}` | Ya | Admin | Ubah nama/deskripsi kategori | 200, kategori |
+| DELETE | `/kategori/{id}` | Ya | Admin | Hapus jika belum digunakan diagnosis | 204 atau 409 |
 | GET | `/alerts?status=&severity=&per_page=` | Ya | Semua | Daftar peringatan | 200, paginasi |
 | POST | `/alerts` | Ya | Admin | `{ "type":"manual","severity":"warning","message":"..." }` | 201, peringatan manual |
 | GET | `/alerts/{id}` | Ya | Semua | Detail peringatan | 200, alert |
@@ -45,3 +50,5 @@ Validasi sensor: kadar air dan kelembapan 0–100; N/P/K 0–1000; suhu
 -10–60 °C; timestamp maksimal lima menit di masa depan. Endpoint yang
 memerlukan entitas mengembalikan 404 JSON `{"message":"Data tidak ditemukan."}`.
 Autentikasi gagal 401, akses peran ditolak 403 `{"message":"Akses ditolak."}`.
+Kategori yang masih direferensikan oleh diagnosis mengembalikan 409. Detail
+kontrak dan error API kategori tersedia di `docs/api/kategori.md`.

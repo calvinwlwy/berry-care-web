@@ -43,6 +43,33 @@ Dokumentasi struktur, ERD, dan kontrak endpoint tersedia di `docs/backend/`.
 API domain memerlukan Bearer token Sanctum. Aturan akses admin/petani dan
 format request/response dirinci dalam dokumentasi endpoint.
 
+## Master Kategori
+
+API master kategori diagnosis berada di `/api/kategori`. Semua pengguna
+terautentikasi dapat membaca dan mencari kategori; hanya admin dapat membuat,
+mengubah, atau menghapusnya. Kategori digunakan secara opsional oleh data
+diagnosis melalui `kategori_id`. Kategori yang masih dipakai diagnosis tidak
+dapat dihapus.
+
+Setelah menjalankan migrasi, isi kategori awal secara eksplisit:
+
+```powershell
+php artisan migrate
+php artisan db:seed --class=KategoriSeeder
+```
+
+Seeder membuat kategori Penyakit Daun, Penyakit Buah, Hama, Defisiensi
+Nutrisi, dan Tanaman Sehat. Seeder kategori tidak dipanggil otomatis oleh
+`DatabaseSeeder`.
+
+Dokumentasi dan pengujian:
+
+- Kontrak API: `docs/api/kategori.md`
+- Desain database: `docs/api/desain-database-kategori.md`
+- OpenAPI 3.0: `docs/api/kategori-openapi.yaml`
+- Postman: `docs/postman/Berry_Care_Kategori_API.postman_collection.json`
+- Tes kategori: `php artisan test --filter=KategoriApiTest`
+
 ## Tentang data demo
 
 Dashboard Blade lama masih memakai service data contoh. API domain yang

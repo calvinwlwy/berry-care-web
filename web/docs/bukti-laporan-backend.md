@@ -53,11 +53,17 @@ vendor\bin\pint --test
 
 Impor `docs/postman/Berry_Care_Backend_API.postman_collection.json`, isi
 `baseUrl`, `adminEmail`, dan `adminPassword` dengan nilai lokal, lalu jalankan
-delapan folder skenario sesuai urutan. Folder pertama membuat akun petani dan
-polybag uji sebagai prasyarat; pilih file JPG/PNG pada request diagnosis.
-Collection tidak menghapus data uji. Akun petani, polybag, pembacaan sensor,
-alert, dan diagnosis yang dibuat akan tertinggal di database; jalankan pada
-database pengujian/disposable bila tidak ingin menyimpan data demonstrasi.
+sepuluh folder secara berurutan. Delapan folder pertama adalah skenario bukti
+screenshot; folder kesembilan dan kesepuluh menjalankan CRUD polybag dan
+diagnosis (Read daftar, Create, Read detail, Update, Delete). Folder pertama
+membuat akun petani dan polybag uji sebagai prasyarat. Pilih file JPG/PNG
+pada request diagnosis screenshot yang opsional.
+
+Request CRUD menghapus kembali polybag dan diagnosis CRUD yang dibuatnya.
+Akun petani dan polybag prasyarat, pembacaan sensor append-only, serta alert
+hasil evaluasi tetap tersimpan; diagnosis dari skenario screenshot juga tetap
+ada jika request opsional itu dijalankan. Gunakan database pengujian/disposable
+bila tidak ingin menyimpan data demonstrasi.
 
 ## D. Bukti untuk presentasi/laporan
 
@@ -87,9 +93,9 @@ database pengujian/disposable bila tidak ingin menyimpan data demonstrasi.
 ### Bagian 2 — Implementasi backend
 
 **Postman collection:** [Berry_Care_Backend_API.postman_collection.json](./postman/Berry_Care_Backend_API.postman_collection.json).
-Collection ini hanya berisi delapan skenario screenshot Bagian 2. Beberapa
-skenario memuat request persiapan/prasyarat yang diperlukan untuk mendapatkan
-token atau menyiapkan data bagi request yang akan di-screenshot.
+Collection ini memuat delapan skenario screenshot Bagian 2 dan dua folder
+tambahan untuk uji CRUD penuh polybag dan diagnosis. Beberapa skenario memuat
+request persiapan/prasyarat untuk mendapatkan token atau menyiapkan data.
 
 **Screenshot**
 

@@ -7,6 +7,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
@@ -44,8 +45,21 @@ return Application::configure(basePath: dirname(__DIR__))
                 return match ($exception->getStatusCode()) {
                     403 => response()->json(['message' => 'Akses ditolak.'], 403),
                     404 => response()->json(['message' => 'Data tidak ditemukan.'], 404),
+                    405 => response()->json(['message' => 'Metode HTTP tidak diizinkan.'], 405),
+                    409 => response()->json(['message' => 'Konflik pada data yang diminta.'], 409),
+                    500 => response()->json(['message' => 'Terjadi kesalahan pada server.'], 500),
                     default => null,
                 };
+            }
+        });
+        $exceptions->render(function (HttpResponseException $exception, Request $request) {
+            if ($request->is('api/*')) {
+                return $exception->getResponse();
+            }
+        });
+        $exceptions->render(function (Throwable $exception, Request $request) {
+            if ($request->is('api/*') && ! $exception instanceof HttpExceptionInterface) {
+                return response()->json(['message' => 'Terjadi kesalahan pada server.'], 500);
             }
         });
     })->create();

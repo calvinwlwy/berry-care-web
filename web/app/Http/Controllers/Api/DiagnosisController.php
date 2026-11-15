@@ -18,13 +18,16 @@ class DiagnosisController extends Controller
 {
     public function index(IndexDiagnosisRequest $request): AnonymousResourceCollection
     {
-        $query = Diagnosis::query()->with(['user:id,name', 'polybag:id,code'])->latest('scanned_at');
+        $query = Diagnosis::query()->with(['user:id,name', 'polybag:id,code', 'kategori:id,nama_kategori'])->latest('scanned_at');
         $filters = $request->validated();
         if (isset($filters['type'])) {
             $query->where('type', $filters['type']);
         }
         if (isset($filters['polybag_id'])) {
             $query->where('polybag_id', $filters['polybag_id']);
+        }
+        if (isset($filters['kategori_id'])) {
+            $query->where('kategori_id', $filters['kategori_id']);
         }
 
         return DiagnosisResource::collection($query->paginate($filters['per_page'] ?? 15));
@@ -38,7 +41,11 @@ class DiagnosisController extends Controller
             $data['image_path'] = $request->file('image')->store('diagnoses', 'public');
         }
 
-        $diagnosis = Diagnosis::query()->create($data)->load(['user:id,name', 'polybag:id,code']);
+        $diagnosis = Diagnosis::query()->create($data)->load([
+            'user:id,name',
+            'polybag:id,code',
+            'kategori:id,nama_kategori',
+        ]);
 
         return (new DiagnosisResource($diagnosis))
             ->additional(['message' => 'Diagnosis berhasil disimpan.'])
@@ -50,7 +57,11 @@ class DiagnosisController extends Controller
     {
         $this->authorize('view', $diagnosis);
 
-        return new DiagnosisResource($diagnosis->load(['user:id,name', 'polybag:id,code']));
+        return new DiagnosisResource($diagnosis->load([
+            'user:id,name',
+            'polybag:id,code',
+            'kategori:id,nama_kategori',
+        ]));
     }
 
     public function update(UpdateDiagnosisRequest $request, Diagnosis $diagnosis): JsonResponse
@@ -66,7 +77,11 @@ class DiagnosisController extends Controller
             Storage::disk('public')->delete($previousImage);
         }
 
-        return (new DiagnosisResource($diagnosis->fresh(['user:id,name', 'polybag:id,code'])))
+        return (new DiagnosisResource($diagnosis->fresh([
+            'user:id,name',
+            'polybag:id,code',
+            'kategori:id,nama_kategori',
+        ])))
             ->additional(['message' => 'Diagnosis berhasil diperbarui.'])
             ->response();
     }

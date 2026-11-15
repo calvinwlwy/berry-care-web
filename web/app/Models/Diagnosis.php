@@ -13,7 +13,7 @@ class Diagnosis extends Model
     use HasFactory;
 
     protected $fillable = [
-        'polybag_id', 'user_id', 'type', 'label', 'confidence', 'severity', 'notes', 'image_path', 'scanned_at',
+        'polybag_id', 'kategori_id', 'user_id', 'type', 'label', 'confidence', 'severity', 'notes', 'image_path', 'scanned_at',
     ];
 
     protected function casts(): array
@@ -32,5 +32,10 @@ class Diagnosis extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function kategori(): BelongsTo
+    {
+        return $this->belongsTo(Kategori::class);
     }
 }

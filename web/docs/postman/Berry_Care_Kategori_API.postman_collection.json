@@ -1,0 +1,400 @@
+{
+  "info": {
+    "_postman_id": "43abdf72-5813-4ee4-b77f-85c25ac59c1e",
+    "name": "Berry Care - Master Kategori API",
+    "description": "Alur uji API master kategori sesuai tugas Pertemuan 12. Jalankan seluruh request berurutan. Isi adminEmail dan adminPassword secara lokal; jangan simpan kredensial asli di file collection.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:8000/api" },
+    { "key": "adminEmail", "value": "" },
+    { "key": "adminPassword", "value": "" },
+    { "key": "farmerPassword", "value": "BerryTest-2026!" },
+    { "key": "adminToken", "value": "" },
+    { "key": "farmerToken", "value": "" },
+    { "key": "farmerEmail", "value": "" },
+    { "key": "farmerId", "value": "" },
+    { "key": "namaKategori", "value": "" },
+    { "key": "namaKategoriDiubah", "value": "" },
+    { "key": "namaKategoriTerpakai", "value": "" },
+    { "key": "kategoriId", "value": "" },
+    { "key": "kategoriTerpakaiId", "value": "" },
+    { "key": "diagnosisId", "value": "" }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const match = pm.info.requestName.match(/^\\[(\\d+)\\]/);",
+          "pm.test('Status HTTP sesuai skenario', function () { pm.expect(match, 'Request harus mencantumkan status yang diharapkan').to.not.be.null; pm.response.to.have.status(Number(match[1])); });",
+          "if (pm.response.code === 204) {",
+          "  pm.test('204 tidak memiliki body', function () { pm.expect(pm.response.text()).to.eql(''); });",
+          "} else {",
+          "  const body = pm.response.json();",
+          "  pm.test('Response berupa object JSON', function () { pm.expect(body).to.be.an('object'); });",
+          "  if (pm.response.code >= 400) pm.test('Response error memiliki message', function () { pm.expect(body).to.have.property('message'); });",
+          "  if (pm.response.code === 422) pm.test('Response validasi memiliki errors', function () { pm.expect(body).to.have.property('errors'); });",
+          "  if (pm.response.code < 300) {",
+          "    const name = pm.info.requestName.toLowerCase();",
+          "    if (name.includes('login admin')) pm.collectionVariables.set('adminToken', body.token);",
+          "    if (name.includes('buat akun petani')) pm.collectionVariables.set('farmerId', body.data.id);",
+          "    if (name.includes('login petani')) pm.collectionVariables.set('farmerToken', body.token);",
+          "    if (name.includes('tambah kategori (201)')) pm.collectionVariables.set('kategoriId', body.data.id);",
+          "    if (name.includes('tambah kategori untuk diagnosis')) pm.collectionVariables.set('kategoriTerpakaiId', body.data.id);",
+          "    if (name.includes('buat diagnosis kategori')) pm.collectionVariables.set('diagnosisId', body.data.id);",
+          "    if (name.includes('detail kategori')) pm.test('ID kategori sesuai data yang dibuat', function () { pm.expect(body.data.id).to.eql(Number(pm.collectionVariables.get('kategoriId'))); });",
+          "    if (name.includes('ubah kategori (200)')) pm.test('Nama kategori berhasil diubah', function () { pm.expect(body.data.nama_kategori).to.eql(pm.collectionVariables.get('namaKategoriDiubah')); });",
+          "  }",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Login admin",
+      "item": [
+        {
+          "name": "[200] Login admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"{{adminEmail}}\",\"password\":\"{{adminPassword}}\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Buat dan login akun petani untuk tes otorisasi",
+      "item": [
+        {
+          "name": "[201] Buat akun petani",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('farmerEmail', `kategori.test.${Date.now()}@example.test`);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Petani Uji Kategori\",\"email\":\"{{farmerEmail}}\",\"password\":\"{{farmerPassword}}\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/adduser"
+          }
+        },
+        {
+          "name": "[200] Login petani",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"{{farmerEmail}}\",\"password\":\"{{farmerPassword}}\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Baca dan cari kategori",
+      "item": [
+        {
+          "name": "[200] Daftar kategori dengan pagination",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{farmerToken}}" }],
+            "url": "{{baseUrl}}/kategori?per_page=5"
+          }
+        },
+        {
+          "name": "[200] Cari kategori",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{farmerToken}}" }],
+            "url": "{{baseUrl}}/kategori?q=Penyakit&per_page=5"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Tambah kategori dan validasi",
+      "item": [
+        {
+          "name": "[201] Tambah kategori (201)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const stamp = Date.now();",
+                  "pm.collectionVariables.set('namaKategori', `Uji API Kategori ${stamp}`);",
+                  "pm.collectionVariables.set('namaKategoriDiubah', `Uji Kategori Diubah ${stamp}`);",
+                  "pm.collectionVariables.set('namaKategoriTerpakai', `Uji Kategori Terpakai ${stamp}`);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nama_kategori\":\"{{namaKategori}}\",\"deskripsi\":\"Kategori uji CRUD Postman\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/kategori"
+          }
+        },
+        {
+          "name": "[200] Detail kategori",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{farmerToken}}" }],
+            "url": "{{baseUrl}}/kategori/{{kategoriId}}"
+          }
+        },
+        {
+          "name": "[422] Tambah kategori kosong",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nama_kategori\":\"\",\"deskripsi\":\"\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/kategori"
+          }
+        },
+        {
+          "name": "[422] Tambah kategori lebih dari 100 karakter",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nama_kategori\":\"ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ\",\"deskripsi\":\"Tes batas panjang\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/kategori"
+          }
+        },
+        {
+          "name": "[422] Tambah kategori duplikat",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nama_kategori\":\"{{namaKategori}}\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/kategori"
+          }
+        },
+        {
+          "name": "[201] Tambah kategori untuk diagnosis",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nama_kategori\":\"{{namaKategoriTerpakai}}\",\"deskripsi\":\"Kategori uji relasi diagnosis\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/kategori"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Ubah kategori dan validasi",
+      "item": [
+        {
+          "name": "[200] Ubah kategori (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nama_kategori\":\"{{namaKategoriDiubah}}\",\"deskripsi\":\"Nama dan deskripsi telah diperbarui.\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/kategori/{{kategoriId}}"
+          }
+        },
+        {
+          "name": "[422] Ubah kategori menjadi nama duplikat",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nama_kategori\":\"{{namaKategoriTerpakai}}\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/kategori/{{kategoriId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Hubungkan kategori ke diagnosis",
+      "item": [
+        {
+          "name": "[201] Buat diagnosis dengan kategori",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{farmerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"kategori_id\":{{kategoriTerpakaiId}},\"type\":\"leaf\",\"label\":\"Diagnosis uji kategori\",\"confidence\":91,\"severity\":\"watch\",\"scanned_at\":\"{{$isoTimestamp}}\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/diagnoses"
+          }
+        },
+        {
+          "name": "[200] Filter diagnosis berdasarkan kategori",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{farmerToken}}" }],
+            "url": "{{baseUrl}}/diagnoses?kategori_id={{kategoriTerpakaiId}}&per_page=5"
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Hapus kategori",
+      "item": [
+        {
+          "name": "[204] Hapus kategori yang tidak dipakai",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/kategori/{{kategoriId}}"
+          }
+        },
+        {
+          "name": "[409] Hapus kategori yang masih dipakai diagnosis",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/kategori/{{kategoriTerpakaiId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Error resource dan autentikasi",
+      "item": [
+        {
+          "name": "[404] ID kategori tidak ditemukan",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/kategori/999999999"
+          }
+        },
+        {
+          "name": "[401] Daftar kategori tanpa token",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/kategori"
+          }
+        },
+        {
+          "name": "[403] Petani mencoba menambah kategori",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{farmerToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nama_kategori\":\"Tidak Boleh Dibuat Petani\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/kategori"
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Bersihkan data uji",
+      "item": [
+        {
+          "name": "[204] Hapus diagnosis uji",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/diagnoses/{{diagnosisId}}"
+          }
+        },
+        {
+          "name": "[204] Hapus kategori setelah diagnosis",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/kategori/{{kategoriTerpakaiId}}"
+          }
+        },
+        {
+          "name": "[200] Hapus akun petani uji",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/deleteuser/{{farmerId}}"
+          }
+        }
+      ]
+    }
+  ]
+}

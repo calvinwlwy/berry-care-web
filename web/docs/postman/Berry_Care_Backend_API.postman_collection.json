@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "bc27cd90-ff43-4fd5-80f2-4c85d98e5de6",
-    "name": "Berry Care Backend - Bukti Screenshot",
-    "description": "Collection ini hanya memuat 8 skenario screenshot Bagian 2. Jalankan folder secara berurutan. Folder pertama juga berisi request persiapan admin untuk membuat akun petani dan polybag uji. Isi adminEmail dan adminPassword dengan kredensial lokal.",
+    "name": "Berry Care Backend - Screenshot dan CRUD",
+    "description": "Collection memuat 8 skenario screenshot Bagian 2 dan request CRUD lengkap polybag serta diagnosis. Jalankan folder secara berurutan. Isi adminEmail dan adminPassword dengan kredensial lokal.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -12,9 +12,12 @@
     { "key": "farmerPassword", "value": "DemoPetani-2026!" },
     { "key": "farmerEmail", "value": "" },
     { "key": "polybagCode", "value": "" },
+    { "key": "crudPolybagCode", "value": "" },
     { "key": "adminToken", "value": "" },
     { "key": "farmerToken", "value": "" },
     { "key": "polybagId", "value": "" },
+    { "key": "crudPolybagId", "value": "" },
+    { "key": "crudDiagnosisId", "value": "" },
     { "key": "systemAlertId", "value": "" }
   ],
   "event": [
@@ -34,6 +37,12 @@
           "    if (name.includes('login admin')) pm.collectionVariables.set('adminToken', body.token);",
           "    if (name.includes('login petani')) pm.collectionVariables.set('farmerToken', body.token);",
           "    if (name.includes('buat polybag uji')) pm.collectionVariables.set('polybagId', body.data.id);",
+          "    if (name.includes('buat polybag crud')) pm.collectionVariables.set('crudPolybagId', body.data.id);",
+          "    if (name.includes('buat diagnosis crud')) pm.collectionVariables.set('crudDiagnosisId', body.data.id);",
+          "    if (name.includes('detail polybag crud')) pm.test('ID polybag sesuai hasil create', function () { pm.expect(body.data.id).to.eql(Number(pm.collectionVariables.get('crudPolybagId'))); });",
+          "    if (name.includes('detail diagnosis crud')) pm.test('ID diagnosis sesuai hasil create', function () { pm.expect(body.data.id).to.eql(Number(pm.collectionVariables.get('crudDiagnosisId'))); });",
+          "    if (name.includes('ubah polybag crud')) pm.test('Perubahan polybag tersimpan', function () { pm.expect(body.data.location).to.eql('Lokasi CRUD diperbarui'); });",
+          "    if (name.includes('ubah diagnosis crud')) pm.test('Perubahan diagnosis tersimpan', function () { pm.expect(body.data.label).to.eql('Diagnosis CRUD diperbarui'); });",
           "    if (name.includes('daftar alert aktif')) {",
           "      const alert = (body.data || []).find((item) => item.source === 'system' && item.status === 'active' && item.polybag_id === Number(pm.collectionVariables.get('polybagId')));",
           "      if (alert) pm.collectionVariables.set('systemAlertId', alert.id);",
@@ -258,6 +267,125 @@
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/thresholds"
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. CRUD Polybag (admin)",
+      "description": "Jalankan berurutan untuk menguji Read daftar, Create, Read detail, Update, dan Delete. Data polybag CRUD dihapus pada request terakhir.",
+      "item": [
+        {
+          "name": "[200] Daftar polybag (CRUD - Read)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/polybags?per_page=5"
+          }
+        },
+        {
+          "name": "[201] Buat polybag CRUD",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('crudPolybagCode', `POT-CRUD-${Date.now()}`);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"code\":\"{{crudPolybagCode}}\",\"block\":\"B\",\"location\":\"Lokasi CRUD awal\"}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/polybags"
+          }
+        },
+        {
+          "name": "[200] Detail polybag CRUD (Read)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/polybags/{{crudPolybagId}}"
+          }
+        },
+        {
+          "name": "[200] Ubah polybag CRUD (Update)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"block\":\"C\",\"location\":\"Lokasi CRUD diperbarui\",\"is_active\":true}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/polybags/{{crudPolybagId}}"
+          }
+        },
+        {
+          "name": "[204] Hapus polybag CRUD (Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/polybags/{{crudPolybagId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. CRUD Diagnosis (admin)",
+      "description": "Menguji Read daftar, Create, Read detail, Update, dan Delete diagnosis yang tertaut ke polybag uji pada folder pertama.",
+      "item": [
+        {
+          "name": "[200] Daftar diagnosis (CRUD - Read)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/diagnoses?polybag_id={{polybagId}}&per_page=5"
+          }
+        },
+        {
+          "name": "[201] Buat diagnosis CRUD",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"polybag_id\":{{polybagId}},\"type\":\"leaf\",\"label\":\"Diagnosis CRUD awal\",\"confidence\":90,\"severity\":\"watch\",\"scanned_at\":\"{{$isoTimestamp}}\",\"notes\":\"Uji CRUD Postman\"}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/diagnoses"
+          }
+        },
+        {
+          "name": "[200] Detail diagnosis CRUD (Read)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/diagnoses/{{crudDiagnosisId}}"
+          }
+        },
+        {
+          "name": "[200] Ubah diagnosis CRUD (Update)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\"label\":\"Diagnosis CRUD diperbarui\",\"confidence\":96,\"severity\":\"action\",\"notes\":\"Diagnosis diperbarui melalui CRUD Postman\"}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/diagnoses/{{crudDiagnosisId}}"
+          }
+        },
+        {
+          "name": "[204] Hapus diagnosis CRUD (Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/diagnoses/{{crudDiagnosisId}}"
           }
         }
       ]
