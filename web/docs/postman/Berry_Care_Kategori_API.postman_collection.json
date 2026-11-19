@@ -43,7 +43,7 @@
           "    if (name.includes('login petani')) pm.collectionVariables.set('farmerToken', body.token);",
           "    if (name.includes('tambah kategori (201)')) pm.collectionVariables.set('kategoriId', body.data.id);",
           "    if (name.includes('tambah kategori untuk diagnosis')) pm.collectionVariables.set('kategoriTerpakaiId', body.data.id);",
-          "    if (name.includes('buat diagnosis kategori')) pm.collectionVariables.set('diagnosisId', body.data.id);",
+          "    if (name.includes('buat diagnosis dengan kategori')) pm.collectionVariables.set('diagnosisId', body.data.id);",
           "    if (name.includes('detail kategori')) pm.test('ID kategori sesuai data yang dibuat', function () { pm.expect(body.data.id).to.eql(Number(pm.collectionVariables.get('kategoriId'))); });",
           "    if (name.includes('ubah kategori (200)')) pm.test('Nama kategori berhasil diubah', function () { pm.expect(body.data.nama_kategori).to.eql(pm.collectionVariables.get('namaKategoriDiubah')); });",
           "  }",
