@@ -27,7 +27,6 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _rememberDevice = true;
   bool _showPassword = false;
   bool _isLoading = false;
   bool _isGoogleLoading = false;
@@ -180,7 +179,7 @@ class _LoginState extends State<Login> {
       response['user'] as Map<String, dynamic>,
       response['token'] as String,
     );
-    await Session.start(user, remember: _rememberDevice);
+    await Session.start(user, remember: true);
     if (!mounted) return;
     Navigator.of(context)
         .pushReplacement(MaterialPageRoute<void>(builder: (_) => const Home()));
@@ -355,6 +354,7 @@ class _LoginState extends State<Login> {
                               controller: _emailController,
                               label: 'Email',
                               icon: Icons.mail_outline,
+                              hintText: 'Masukkan email',
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
                             ),
@@ -363,6 +363,7 @@ class _LoginState extends State<Login> {
                               controller: _passwordController,
                               label: 'Password',
                               icon: Icons.lock_outline,
+                              hintText: 'Masukkan password',
                               obscureText: !_showPassword,
                               textInputAction: TextInputAction.done,
                               onSubmitted: (_) => _login(),
@@ -382,58 +383,7 @@ class _LoginState extends State<Login> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: space12),
-                            InkWell(
-                              onTap: () => setState(
-                                () => _rememberDevice = !_rememberDevice,
-                              ),
-                              borderRadius: BorderRadius.circular(smallRadius),
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  minHeight: 44,
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: space8,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: Checkbox(
-                                          value: _rememberDevice,
-                                          activeColor: primaryColor,
-                                          side: const BorderSide(
-                                            color: borderColor,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              smallRadius,
-                                            ),
-                                          ),
-                                          onChanged: (value) => setState(
-                                            () => _rememberDevice =
-                                                value ?? false,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: space8),
-                                      const Flexible(
-                                        child: Text(
-                                          'Ingat perangkat ini di kebun',
-                                          style: TextStyle(
-                                            color: Color(0xFF475569),
-                                            fontSize: 11,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: space16),
+                            const SizedBox(height: space20),
                             AppButton(
                               label: _isLoading || _isGoogleLoading
                                   ? 'Memeriksa akses...'

@@ -26,12 +26,14 @@ Route::middleware(['auth', PreventAuthenticatedPageCaching::class])->group(funct
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::get('/polybags', [ManagementController::class, 'polybags'])->name('polybags.index');
     Route::get('/diagnosis', [ManagementController::class, 'diagnosis'])->name('diagnosis.index');
-    Route::post('/diagnosis/upload', [ManagementController::class, 'uploadScan'])->name('diagnosis.upload');
     Route::get('/alerts', [ManagementController::class, 'alerts'])->name('alerts.index');
     Route::get('/thresholds', [ManagementController::class, 'thresholds'])->name('thresholds.index');
     Route::put('/thresholds', [ManagementController::class, 'saveThresholds'])->name('thresholds.update');
-    Route::get('/users', [ManagementController::class, 'users'])->name('users.index');
-    Route::post('/users', [ManagementController::class, 'storeUser'])->name('users.store');
-    Route::put('/users/{user}', [ManagementController::class, 'updateUser'])->name('users.update');
+    Route::middleware('admin')->group(function () {
+        Route::get('/users', [ManagementController::class, 'users'])->name('users.index');
+        Route::post('/users', [ManagementController::class, 'storeUser'])->name('users.store');
+        Route::put('/users/{user}', [ManagementController::class, 'updateUser'])->name('users.update');
+        Route::delete('/users/{user}', [ManagementController::class, 'deleteUser'])->name('users.destroy');
+    });
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });

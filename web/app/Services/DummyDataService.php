@@ -19,7 +19,6 @@ class DummyDataService
         return [
             'greeting' => 'Selamat datang di dashboard Haifresh',
             'updatedAt' => '2 menit lalu',
-            'weather' => ['location' => 'Lembang', 'temperature' => 21, 'humidity' => 84, 'condition' => 'Lembap Basah'],
             'activeAlerts' => $this->activeAlertCount(),
             'systemStatus' => 'Sistem beroperasi normal',
             'lastSync' => '10:54 WIB',
@@ -99,15 +98,5 @@ class DummyDataService
     public function thresholds(): array
     {
         return ['humidity' => 85, 'water' => 45, 'n' => 30, 'p' => 20, 'k' => 120];
-    }
-
-    public function users(): array
-    {
-        return [
-            ['name' => 'Dadang Suhendar', 'email' => 'dadang@haifresh.id', 'role' => 'Owner', 'last' => 'Hari ini, 10:52'],
-            ['name' => 'Dr. Rina Wulandari', 'email' => 'rina@haifresh.id', 'role' => 'Agronomis', 'last' => 'Hari ini, 09:41'],
-            ['name' => 'Asep Mulyana', 'email' => 'asep@haifresh.id', 'role' => 'Petani Lapangan', 'last' => 'Kemarin, 16:28'],
-            ['name' => 'Yudi Hermawan', 'email' => 'yudi@haifresh.id', 'role' => 'Petani Lapangan', 'last' => '12 Jan 2026'],
-        ];
     }
 }

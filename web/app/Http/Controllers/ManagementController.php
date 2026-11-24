@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Web\IndexUsersRequest;
+use App\Http\Requests\Web\StoreUserRequest;
+use App\Http\Requests\Web\UpdateUserRequest;
+use App\Models\User;
 use App\Services\DummyDataService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class ManagementController extends Controller
@@ -61,25 +66,7 @@ class ManagementController extends Controller
                 'Buah' => 12,
                 'Jamur' => 5,
             ],
-            'polybagIds' => array_column($this->data->polybags(), 'id'),
         ]);
-    }
-
-    public function uploadScan(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'photo' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:10240'],
-            'polybag_id' => ['required', Rule::in(array_column($this->data->polybags(), 'id'))],
-        ], [
-            'photo.required' => 'Pilih foto daun atau buah terlebih dahulu.',
-            'photo.image' => 'File harus berupa gambar.',
-            'photo.mimes' => 'Format foto harus JPG atau PNG.',
-            'photo.max' => 'Ukuran foto maksimal 10 MB.',
-            'polybag_id.required' => 'Pilih ID polybag.',
-            'polybag_id.in' => 'ID polybag tidak valid.',
-        ]);
-
-        return redirect()->route('diagnosis.index')->with('status', 'Foto diterima untuk simulasi diagnosis.');
     }
 
     public function alerts(): View
@@ -124,66 +111,110 @@ class ManagementController extends Controller
         return back()->with('status', 'Pengaturan berhasil diperbarui.');
     }
 
-    public function users(Request $request): View
+    public function users(IndexUsersRequest $request): View
     {
-        $users = $request->session()->get('dummy.users', $this->data->users());
-        $users = array_map(static function (array $user, int $index): array {
-            $user['id'] = $index;
-            $user['initials'] = collect(explode(' ', $user['name']))
-                ->map(static fn (string $part): string => mb_substr($part, 0, 1))
-                ->take(2)
-                ->join('');
+        $filters = $request->validated();
+        $query = User::query()->orderBy('name')->orderBy('id');
 
-            return $user;
-        }, $users, array_keys($users));
-        $query = (string) $request->query('q', '');
-        $filtered = array_values(array_filter($users, static function (array $user) use ($query): bool {
-            return $query === '' || str_contains(strtolower($user['name'].$user['email'].$user['role']), strtolower($query));
-        }));
+        if (! empty($filters['q'])) {
+            $search = $filters['q'];
+            $query->where(static function (Builder $builder) use ($search): void {
+                $builder->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('email', 'like', '%'.$search.'%');
+            });
+        }
+        if (! empty($filters['role'])) {
+            $query->where('role', $filters['role']);
+        }
 
         return view('pages.users', $this->layoutData('Manajemen Pengguna') + [
-            'users' => $this->paginate($filtered, $request, 10),
-            'totalUsers' => count($users),
-            'query' => $query,
+            'users' => $query->paginate(10)->withQueryString(),
+            'totalUsers' => User::query()->count(),
+            'query' => $filters['q'] ?? '',
+            'role' => $filters['role'] ?? '',
         ]);
     }
 
-    public function storeUser(Request $request): RedirectResponse
+    public function storeUser(StoreUserRequest $request): RedirectResponse
     {
-        $values = $this->validateUser($request);
-        $users = $request->session()->get('dummy.users', $this->data->users());
-        $users[] = $values + ['last' => 'Belum pernah'];
-        $request->session()->put('dummy.users', $users);
+        User::query()->create($request->safe()->only(['name', 'email', 'password', 'role']));
 
         return redirect()->route('users.index')->with('status', 'Pengguna baru berhasil ditambahkan.');
     }
 
-    public function updateUser(Request $request, int $user): RedirectResponse
+    public function updateUser(UpdateUserRequest $request, User $user): RedirectResponse
     {
-        $users = $request->session()->get('dummy.users', $this->data->users());
-        abort_unless(array_key_exists($user, $users), 404);
-        $values = $this->validateUser($request, $users[$user]['email']);
-        $users[$user] = array_merge($users[$user], $values);
-        $request->session()->put('dummy.users', $users);
+        $values = $request->safe()->only(['name', 'email', 'role', 'password']);
+        $result = DB::transaction(function () use ($request, $user, $values): ?string {
+            $adminIds = User::query()
+                ->where('role', 'admin')
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->pluck('id');
+            $lockedUser = User::query()->lockForUpdate()->findOrFail($user->id);
+
+            if ($request->user()->is($lockedUser) && $values['role'] !== 'admin') {
+                return 'Anda tidak dapat menurunkan peran akun admin yang sedang digunakan.';
+            }
+
+            if ($lockedUser->role === 'admin' && $values['role'] !== 'admin' && $adminIds->count() <= 1) {
+                return 'Peran admin terakhir tidak dapat diubah.';
+            }
+
+            $passwordChanged = isset($values['password'])
+                && ! Hash::check($values['password'], $lockedUser->password);
+            if (! $passwordChanged) {
+                unset($values['password']);
+            }
+            $roleChanged = $lockedUser->role !== $values['role'];
+
+            $lockedUser->fill($values)->save();
+            if ($passwordChanged || $roleChanged) {
+                $lockedUser->tokens()->delete();
+            }
+
+            return null;
+        });
+
+        if ($result !== null) {
+            return back()
+                ->withErrors(['role' => $result])
+                ->withInput($request->only(['name', 'email', 'role', '_form', 'user_id']));
+        }
 
         return redirect()->route('users.index')->with('status', 'Data pengguna berhasil diperbarui.');
     }
 
-    private function validateUser(Request $request, ?string $currentEmail = null): array
+    public function deleteUser(Request $request, User $user): RedirectResponse
     {
-        return Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($currentEmail, 'email')],
-            'role' => ['required', Rule::in(['Owner', 'Agronomis', 'Petani Lapangan'])],
-        ], [
-            'name.required' => 'Nama lengkap wajib diisi.',
-            'name.max' => 'Nama maksimal 255 karakter.',
-            'email.required' => 'Email wajib diisi.',
-            'email.email' => 'Masukkan alamat email yang valid.',
-            'email.unique' => 'Email sudah digunakan.',
-            'role.required' => 'Pilih peran pengguna.',
-            'role.in' => 'Peran yang dipilih tidak valid.',
-        ])->validate();
+        $result = DB::transaction(function () use ($request, $user): ?string {
+            $adminIds = User::query()
+                ->where('role', 'admin')
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->pluck('id');
+            $lockedUser = User::query()->lockForUpdate()->findOrFail($user->id);
+
+            if ($request->user()->is($lockedUser)) {
+                return 'Anda tidak dapat menghapus akun yang sedang digunakan.';
+            }
+            if ($lockedUser->role === 'admin' && $adminIds->count() <= 1) {
+                return 'Admin terakhir tidak dapat dihapus.';
+            }
+
+            $lockedUser->tokens()->delete();
+            $lockedUser->delete();
+
+            return null;
+        });
+
+        if ($result !== null) {
+            return back()
+                ->withErrors(['delete' => $result])
+                ->withInput(['_form' => 'delete', 'user_id' => $user->id]);
+        }
+
+        return redirect()->route('users.index')->with('status', 'Pengguna berhasil dihapus.');
     }
 
     private function layoutData(string $title): array
@@ -192,7 +223,6 @@ class ManagementController extends Controller
             'title' => $title,
             'breadcrumb' => $title,
             'search' => '',
-            'weather' => ['location' => 'Lembang', 'temperature' => 21, 'humidity' => 84, 'condition' => 'Lembap Basah'],
             'activeAlerts' => $this->data->activeAlertCount(),
             'systemStatus' => 'Sistem beroperasi normal',
             'lastSync' => '10:54 WIB',

@@ -87,6 +87,7 @@ class AppButton extends StatelessWidget {
     this.trailingIcon,
     this.secondary = false,
     this.danger = false,
+    this.centerLabel = false,
     this.height = 50,
     super.key,
   });
@@ -97,6 +98,7 @@ class AppButton extends StatelessWidget {
   final IconData? trailingIcon;
   final bool secondary;
   final bool danger;
+  final bool centerLabel;
   final double height;
 
   @override
@@ -131,7 +133,9 @@ class AppButton extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                textAlign: secondary ? TextAlign.center : TextAlign.left,
+                textAlign: secondary || centerLabel
+                    ? TextAlign.center
+                    : TextAlign.left,
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w800,

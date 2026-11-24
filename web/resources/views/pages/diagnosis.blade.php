@@ -1,13 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
-    <div x-data="{ selected: null, fileName: '' }" @scan-selected.window="selected = $event.detail" class="flex flex-col gap-5">
+    <div x-data="{ selected: null }" @scan-selected.window="selected = $event.detail" class="flex flex-col gap-5">
         <section class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div>
                 <h1 class="font-display text-[23px] leading-tight font-bold tracking-tight">Riwayat Diagnosis AI</h1>
                 <p class="mt-1.5 text-xs text-berry-muted">Hasil klasifikasi kesehatan daun dan kematangan buah dari kamera kebun.</p>
             </div>
-            <x-button icon="upload" @click="$dispatch('open-modal', 'upload-scan')">Upload Foto Manual</x-button>
         </section>
 
         <x-card class="flex flex-col justify-between gap-2.5 p-3.5 sm:flex-row sm:items-center">
@@ -94,25 +93,5 @@
             </div>
         </x-modal>
 
-        <x-modal id="upload-scan" title="Upload Foto Manual" :open="$errors->has('photo') || $errors->has('polybag_id')">
-            <form action="{{ route('diagnosis.upload') }}" method="POST" enctype="multipart/form-data" class="space-y-3">
-                @csrf
-                <label class="flex h-[155px] cursor-pointer flex-col items-center justify-center gap-2 rounded-nav border border-dashed border-berry-slate-400 bg-berry-canvas text-berry-green hover:border-berry-green hover:bg-berry-green-soft">
-                    <input type="file" name="photo" accept="image/jpeg,image/png" class="sr-only" @change="fileName = $event.target.files[0]?.name ?? ''">
-                    <x-icon name="upload" size="28"/>
-                    <strong class="text-[11px] text-berry-slate-700" x-text="fileName || 'Pilih foto daun atau buah'"></strong>
-                    <span class="text-[9px] text-berry-muted">JPG atau PNG, maksimum 10 MB</span>
-                </label>
-                @error('photo')<p class="text-[10px] text-berry-crimson" role="alert">{{ $message }}</p>@enderror
-                <x-select name="polybag_id" label="ID Polybag" id="polybag_id" :error="$errors->first('polybag_id')">
-                    <option value="">Pilih ID polybag</option>
-                    @foreach ($polybagIds as $polybagId)<option value="{{ $polybagId }}" @selected(old('polybag_id') === $polybagId)>{{ $polybagId }}</option>@endforeach
-                </x-select>
-                <div class="flex justify-end gap-2 border-t border-berry-border pt-4">
-                    <x-button variant="secondary" @click="$dispatch('open-modal-close', 'upload-scan')">Batal</x-button>
-                    <x-button type="submit">Mulai Diagnosis</x-button>
-                </div>
-            </form>
-        </x-modal>
     </div>
 @endsection

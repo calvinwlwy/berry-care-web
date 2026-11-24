@@ -68,8 +68,6 @@ const healthyPhoto =
     'https://images.unsplash.com/photo-1582757793483-e407049be006?auto=format&fit=crop&w=900&q=85';
 
 // DEMO DATA: replace these field readings, alerts, histories, and trends with API data.
-const weatherLocation = 'Lembang 21°C';
-const weatherHumidity = 'RH 84%';
 const currentAirTemperature = '21.4';
 const currentAirHumidity = '84%';
 const averageSoilMoisture = '62';

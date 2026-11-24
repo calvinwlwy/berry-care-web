@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class ManagementPagesTest extends TestCase
@@ -83,40 +84,16 @@ class ManagementPagesTest extends TestCase
             ->assertSee('activeAlerts: 3', false);
     }
 
-    public function test_user_can_be_added_and_edited_in_demo_session_data(): void
+    public function test_diagnosis_history_remains_available_without_manual_upload(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'admin']));
 
-        $this->post(route('users.store'), [
-            'name' => 'Budi Santoso',
-            'email' => 'budi@example.test',
-            'role' => 'Agronomis',
-        ])->assertRedirect(route('users.index'))
-            ->assertSessionHas('status', 'Pengguna baru berhasil ditambahkan.');
-
-        $this->get(route('users.index'))
+        $this->get(route('diagnosis.index'))
             ->assertOk()
-            ->assertSee('Budi Santoso');
+            ->assertSee('Riwayat Diagnosis AI')
+            ->assertSee('Bercak Daun')
+            ->assertDontSee('Upload Foto Manual');
 
-        $this->put(route('users.update', 4), [
-            'name' => 'Budi Santoso',
-            'email' => 'budi@example.test',
-            'role' => 'Owner',
-        ])->assertRedirect(route('users.index'))
-            ->assertSessionHas('status', 'Data pengguna berhasil diperbarui.');
-    }
-
-    public function test_user_form_validation_errors_are_returned(): void
-    {
-        $this->actingAs(User::factory()->create());
-
-        $this->from(route('users.index'))->post(route('users.store'), [
-            '_form' => 'create',
-            'name' => '',
-            'email' => 'invalid-email',
-            'role' => 'Unknown',
-        ])->assertRedirect(route('users.index'))
-            ->assertSessionHasErrors(['name', 'email', 'role'])
-            ->assertSessionHas('_old_input._form', 'create');
+        $this->assertFalse(Route::has('diagnosis.upload'));
     }
 }

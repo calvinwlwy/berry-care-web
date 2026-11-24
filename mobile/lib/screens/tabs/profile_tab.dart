@@ -4,17 +4,10 @@ import '../../helper/constant.dart';
 import '../../helper/session.dart';
 import '../../widget/app_widgets.dart';
 
-class ProfileTab extends StatefulWidget {
+class ProfileTab extends StatelessWidget {
   const ProfileTab({required this.onLogout, super.key});
 
   final Future<void> Function() onLogout;
-
-  @override
-  State<ProfileTab> createState() => _ProfileTabState();
-}
-
-class _ProfileTabState extends State<ProfileTab> {
-  bool _offlineMode = false;
 
   @override
   Widget build(BuildContext context) {
@@ -40,58 +33,81 @@ class _ProfileTabState extends State<ProfileTab> {
       ),
       children: [
         const ScreenHeader(title: 'Profil Operator', eyebrow: 'AKUN LAPANGAN'),
-        AppCard(
-          padding: const EdgeInsets.all(space16),
-          child: Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: lightGreen,
-                  borderRadius: BorderRadius.circular(cardRadius),
-                ),
-                child: Text(
-                  initials.isEmpty ? 'O' : initials,
-                  style: const TextStyle(
-                    color: darkGreen,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              const SizedBox(width: space12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+        Material(
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(cardRadius),
+            side: const BorderSide(color: borderColor),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            key: const ValueKey('operator-profile-card'),
+            onTap: () => _showProfileDetails(
+              context,
+              name: name,
+              email: user?.email ?? '',
+              role: role,
+              operatorId: user == null
+                  ? '-'
+                  : 'BC-${user.id.toString().padLeft(4, '0')}',
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(space16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: lightGreen,
+                      borderRadius: BorderRadius.circular(cardRadius),
+                    ),
+                    child: Text(
+                      initials.isEmpty ? 'O' : initials,
                       style: const TextStyle(
-                        fontSize: 14,
+                        color: darkGreen,
+                        fontSize: 17,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: space4),
-                    Text(
-                      user?.email ?? '',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: mutedColor, fontSize: 11),
+                  ),
+                  const SizedBox(width: space12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: space4),
+                        Text(
+                          user?.email ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: mutedColor,
+                            fontSize: 11,
+                          ),
+                        ),
+                        const SizedBox(height: space8),
+                        AppBadge(
+                          label: role.toUpperCase(),
+                          icon: Icons.verified_user_outlined,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: space8),
-                    AppBadge(
-                      label: role.toUpperCase(),
-                      icon: Icons.verified_user_outlined,
-                    ),
-                  ],
-                ),
+                  ),
+                  const Icon(Icons.chevron_right, color: subtleColor, size: 19),
+                ],
               ),
-              const Icon(Icons.chevron_right, color: subtleColor, size: 19),
-            ],
+            ),
           ),
         ),
         const SizedBox(height: space16),
@@ -106,8 +122,10 @@ class _ProfileTabState extends State<ProfileTab> {
                 icon: Icons.location_on_outlined,
                 title: 'Lokasi Kebun',
                 subtitle: 'Haifresh Lembang • Blok A',
-                onTap: () =>
-                    _notify('Informasi penugasan masih berupa data contoh.'),
+                onTap: () => _notify(
+                  context,
+                  'Informasi penugasan masih berupa data contoh.',
+                ),
               ),
               const Divider(height: 1, indent: 54),
               _InfoRow(
@@ -116,8 +134,10 @@ class _ProfileTabState extends State<ProfileTab> {
                 subtitle: user == null
                     ? '-'
                     : 'BC-${user.id.toString().padLeft(4, '0')}',
-                onTap: () =>
-                    _notify('Informasi penugasan masih berupa data contoh.'),
+                onTap: () => _notify(
+                  context,
+                  'Informasi penugasan masih berupa data contoh.',
+                ),
               ),
             ],
           ),
@@ -132,66 +152,20 @@ class _ProfileTabState extends State<ProfileTab> {
                 icon: Icons.sensors_outlined,
                 title: 'Gateway Sensor',
                 subtitle: 'GW-LEMBANG-01 • Data contoh',
-                onTap: () =>
-                    _notify('Informasi perangkat masih berupa data contoh.'),
+                onTap: () => _notify(
+                  context,
+                  'Informasi perangkat masih berupa data contoh.',
+                ),
               ),
               const Divider(height: 1, indent: 54),
               _InfoRow(
                 icon: Icons.phone_android_outlined,
                 title: 'Perangkat ini',
                 subtitle: 'Field Device • Versi 1.0.0',
-                onTap: () =>
-                    _notify('Informasi perangkat masih berupa data contoh.'),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: space16),
-        const _ProfileSectionLabel(title: 'Pengaturan Aplikasi'),
-        AppCard(
-          padding: const EdgeInsets.symmetric(
-            horizontal: space12,
-            vertical: space4,
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(controlRadius),
+                onTap: () => _notify(
+                  context,
+                  'Informasi perangkat masih berupa data contoh.',
                 ),
-                child: const Icon(
-                  Icons.cloud_off_outlined,
-                  color: mutedColor,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: space8),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Mode Offline',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    SizedBox(height: space4),
-                    Text(
-                      'Tidak mengubah koneksi API',
-                      style: TextStyle(color: mutedColor, fontSize: 11),
-                    ),
-                  ],
-                ),
-              ),
-              Switch(
-                value: _offlineMode,
-                activeThumbColor: primaryColor,
-                onChanged: (value) => setState(() => _offlineMode = value),
               ),
             ],
           ),
@@ -201,7 +175,7 @@ class _ProfileTabState extends State<ProfileTab> {
           label: 'Keluar / Logout',
           icon: Icons.logout,
           danger: true,
-          onPressed: widget.onLogout,
+          onPressed: onLogout,
         ),
         const SizedBox(height: space12),
         const Center(
@@ -214,9 +188,43 @@ class _ProfileTabState extends State<ProfileTab> {
     );
   }
 
-  void _notify(String message) {
+  void _notify(BuildContext context, String message) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _showProfileDetails(
+    BuildContext context, {
+    required String name,
+    required String email,
+    required String role,
+    required String operatorId,
+  }) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Detail Profil Operator'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
+            const SizedBox(height: space8),
+            Text(email, style: const TextStyle(color: mutedColor)),
+            const SizedBox(height: space12),
+            AppBadge(label: role.toUpperCase()),
+            const SizedBox(height: space12),
+            Text('ID Operator: $operatorId'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

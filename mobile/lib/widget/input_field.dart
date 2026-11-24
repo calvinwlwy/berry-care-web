@@ -7,6 +7,7 @@ class AppInputField extends StatelessWidget {
     required this.controller,
     required this.label,
     required this.icon,
+    this.hintText,
     this.keyboardType,
     this.obscureText = false,
     this.suffix,
@@ -18,6 +19,7 @@ class AppInputField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final IconData icon;
+  final String? hintText;
   final TextInputType? keyboardType;
   final bool obscureText;
   final Widget? suffix;
@@ -50,7 +52,12 @@ class AppInputField extends StatelessWidget {
             decoration: InputDecoration(
               prefixIcon: Icon(icon, size: 18, color: mutedColor),
               suffixIcon: suffix,
-              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              hintText: hintText,
+              hintStyle: const TextStyle(color: subtleColor, fontSize: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: space12,
+                vertical: 12,
+              ),
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(

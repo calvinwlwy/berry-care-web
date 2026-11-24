@@ -88,56 +88,6 @@ class HomeTab extends StatelessWidget {
         const SizedBox(height: space8),
         const AppSampleLabel(),
         const SizedBox(height: space16),
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: space12,
-            vertical: space12,
-          ),
-          decoration: BoxDecoration(
-            color: const Color(0xFFEAF5FF),
-            borderRadius: BorderRadius.circular(controlRadius),
-            border: Border.all(color: const Color(0xFFD8EAFE)),
-          ),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.cloud_outlined,
-                color: Color(0xFF2563EB),
-                size: 23,
-              ),
-              const SizedBox(width: space8),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      weatherLocation,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
-                      ),
-                    ),
-                    SizedBox(height: space4),
-                    Text(
-                      'Cuaca lokal',
-                      style: TextStyle(color: mutedColor, fontSize: 11),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: space8),
-              const Text(
-                weatherHumidity,
-                style: TextStyle(
-                  color: mutedColor,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: space12),
         InkWell(
           onTap: () => _showAlerts(context),
           borderRadius: BorderRadius.circular(cardRadius),

@@ -92,11 +92,7 @@
                         <strong class="font-semibold text-berry-slate-700">{{ $breadcrumb ?? 'Dashboard' }}</strong>
                     </div>
                 </div>
-                <div class="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-3">
-                    <div class="flex h-9 items-center gap-2 rounded-control border border-berry-green-border bg-berry-green-soft px-3 text-berry-green-dark">
-                        <x-icon name="cloud" size="17"/>
-                        <span class="flex items-center gap-1.5 text-[9px] sm:text-[10px]"><strong class="font-semibold">{{ $weather['location'] }}: {{ $weather['temperature'] }}°C</strong><i class="size-[3px] rounded-full bg-green-300"></i>{{ $weather['humidity'] }}% RH<i class="size-[3px] rounded-full bg-green-300"></i>{{ $weather['condition'] }}</span>
-                    </div>
+                <div class="flex w-full items-center gap-2 sm:w-auto sm:gap-3">
                     <form action="{{ route('polybags.index') }}" method="GET" class="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-control border border-berry-border bg-white px-2.5 text-berry-slate-400 sm:w-[190px] sm:flex-none">
                         <x-icon name="search" size="17"/>
                         <input name="q" value="{{ $search ?? '' }}" class="min-w-0 flex-1 bg-transparent text-[11px] text-berry-ink outline-none placeholder:text-berry-slate-400" placeholder="Cari Pot ID..." aria-label="Cari ID pot">

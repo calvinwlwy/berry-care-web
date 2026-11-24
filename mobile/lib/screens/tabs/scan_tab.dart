@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../data/dummy_data.dart';
 import '../../helper/constant.dart';
@@ -21,18 +22,31 @@ class _ScanTabState extends State<ScanTab> with SingleTickerProviderStateMixin {
     duration: const Duration(milliseconds: 2200),
   )..repeat(reverse: true);
   String _scanType = 'Scan Daun';
-  String _selectedPot = 'POT-05';
+  final TextEditingController _potNumberController = TextEditingController();
+  final FocusNode _potNumberFocusNode = FocusNode();
+  bool _showPotError = false;
   bool _flash = false;
   bool _analyzing = false;
 
   @override
   void dispose() {
     _scanLine.dispose();
+    _potNumberController.dispose();
+    _potNumberFocusNode.dispose();
     super.dispose();
   }
 
   Future<void> _analyze() async {
     if (_analyzing) return;
+    final potNumber = int.tryParse(_potNumberController.text);
+    if (potNumber == null || potNumber <= 0) {
+      setState(() => _showPotError = true);
+      _potNumberFocusNode.requestFocus();
+      return;
+    }
+
+    final potId = 'POT-${potNumber.toString().padLeft(2, '0')}';
+    FocusScope.of(context).unfocus();
     setState(() => _analyzing = true);
     await Future<void>.delayed(const Duration(seconds: 1));
     if (!mounted) return;
@@ -41,7 +55,7 @@ class _ScanTabState extends State<ScanTab> with SingleTickerProviderStateMixin {
       context: context,
       fullHeight: true,
       builder: (context) => _DiagnosisSheet(
-        potId: _selectedPot,
+        potId: potId,
         onSave: () {
           Navigator.of(context).pop();
           ScaffoldMessenger.of(this.context).showSnackBar(
@@ -56,6 +70,14 @@ class _ScanTabState extends State<ScanTab> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final polybagBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(smallRadius),
+      borderSide: BorderSide(
+        color: _showPotError ? dangerBorder : Colors.white54,
+      ),
+    );
+
     return TickerMode(
       enabled: widget.active,
       child: Stack(
@@ -81,7 +103,12 @@ class _ScanTabState extends State<ScanTab> with SingleTickerProviderStateMixin {
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      keyboardVisible ? 4 : 12,
+                      16,
+                      0,
+                    ),
                     child: Row(
                       children: [
                         const Expanded(
@@ -112,107 +139,185 @@ class _ScanTabState extends State<ScanTab> with SingleTickerProviderStateMixin {
                       ],
                     ),
                   ),
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8),
-                    child: Text(
-                      'Data contoh • kamera dan analisis disimulasikan',
-                      style: TextStyle(color: Colors.white, fontSize: 11),
-                    ),
-                  ),
-                  const SizedBox(height: space20),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: ['Scan Daun', 'Scan Buah'].map((type) {
-                      final selected = type == _scanType;
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: space4),
-                        child: AppChip(
-                          label: type,
-                          selected: selected,
-                          selectedBackground: Colors.white,
-                          selectedForeground: darkGreen,
-                          unselectedBackground: const Color(0x33000000),
-                          unselectedForeground: Colors.white,
-                          unselectedBorder: Colors.white54,
-                          onSelected: (_) => setState(() => _scanType = type),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: space16),
-                  Container(
-                    height: 44,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.36),
-                      borderRadius: BorderRadius.circular(controlRadius),
-                      border: Border.all(color: Colors.white38),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _selectedPot,
-                        dropdownColor: darkGreen,
-                        iconEnabledColor: Colors.white,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'POT-05',
-                            child: Text('ID Polybag: POT-05'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'POT-01',
-                            child: Text('ID Polybag: POT-01'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'POT-12',
-                            child: Text('ID Polybag: POT-12'),
-                          ),
-                        ],
-                        onChanged: (value) => setState(
-                          () => _selectedPot = value ?? _selectedPot,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  SizedBox(
-                    width: 250,
-                    height: 250,
-                    child: AnimatedBuilder(
-                      animation: _scanLine,
-                      builder: (context, child) => CustomPaint(
-                        painter: _TargetPainter(linePosition: _scanLine.value),
-                        child: child,
-                      ),
-                      child: const Center(
+                  if (!keyboardVisible)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 8, left: 16),
                         child: Text(
-                          'Posisikan daun di dalam bingkai',
-                          textAlign: TextAlign.center,
+                          'Data contoh • kamera dan analisis disimulasikan',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ),
+                  SizedBox(height: keyboardVisible ? space8 : space20),
+                  if (!keyboardVisible)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: ['Scan Daun', 'Scan Buah'].map((type) {
+                        final selected = type == _scanType;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: space4,
+                          ),
+                          child: AppChip(
+                            label: type,
+                            selected: selected,
+                            selectedBackground: Colors.white,
+                            selectedForeground: darkGreen,
+                            unselectedBackground: const Color(0x33000000),
+                            unselectedForeground: Colors.white,
+                            unselectedBorder: Colors.white54,
+                            onSelected: (_) => setState(() => _scanType = type),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  SizedBox(height: keyboardVisible ? space8 : space16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'ID Polybag',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            shadows: [
-                              Shadow(color: Colors.black87, blurRadius: 4),
-                            ],
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                      ),
+                        const SizedBox(height: space4),
+                        SizedBox(
+                          height: 48,
+                          child: TextField(
+                            key: const ValueKey('polybag-number'),
+                            controller: _potNumberController,
+                            focusNode: _potNumberFocusNode,
+                            keyboardType: TextInputType.number,
+                            textInputAction: TextInputAction.done,
+                            textAlignVertical: TextAlignVertical.center,
+                            cursorColor: Colors.white,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(3),
+                            ],
+                            maxLength: 3,
+                            onTapOutside: (_) => _potNumberFocusNode.unfocus(),
+                            onSubmitted: (_) => _potNumberFocusNode.unfocus(),
+                            onChanged: (_) {
+                              if (_showPotError) {
+                                setState(() => _showPotError = false);
+                              }
+                            },
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            decoration: InputDecoration(
+                              isDense: true,
+                              filled: true,
+                              fillColor: Colors.black.withValues(alpha: 0.35),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: space12,
+                              ),
+                              border: polybagBorder,
+                              enabledBorder: polybagBorder,
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  smallRadius,
+                                ),
+                                borderSide: const BorderSide(
+                                  color: Colors.white,
+                                  width: 1.5,
+                                ),
+                              ),
+                              counterText: '',
+                              prefixText: 'POT-',
+                              prefixStyle: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              hintText: 'mis. 5',
+                              hintStyle: const TextStyle(
+                                color: Colors.white60,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (_showPotError)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 4),
+                            child: Text(
+                              'Isi nomor polybag.',
+                              key: ValueKey('polybag-number-error'),
+                              style: TextStyle(
+                                color: dangerBorder,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: space8),
-                  const Text(
-                    'Pastikan pencahayaan cukup dan objek terlihat jelas',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white, fontSize: 11),
+                  Expanded(
+                    child: keyboardVisible
+                        ? const SizedBox.shrink()
+                        : Center(
+                            child: SizedBox(
+                              width: 250,
+                              height: 250,
+                              child: AnimatedBuilder(
+                                animation: _scanLine,
+                                builder: (context, child) => CustomPaint(
+                                  painter: _TargetPainter(
+                                    linePosition: _scanLine.value,
+                                  ),
+                                  child: child,
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    'Posisikan daun di dalam bingkai',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      shadows: [
+                                        Shadow(
+                                          color: Colors.black87,
+                                          blurRadius: 4,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                   ),
-                  const Spacer(),
+                  if (!keyboardVisible) ...[
+                    const SizedBox(height: space8),
+                    const Text(
+                      'Pastikan pencahayaan cukup dan objek terlihat jelas',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white, fontSize: 11),
+                    ),
+                  ],
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                    padding: EdgeInsets.fromLTRB(
+                      24,
+                      keyboardVisible ? 0 : space8,
+                      24,
+                      keyboardVisible ? space8 : 24,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -329,12 +434,18 @@ class _ScanAction extends StatelessWidget {
           children: [
             Icon(icon, color: Colors.white, size: 23),
             const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
+            SizedBox(
+              height: 14,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
           ],
